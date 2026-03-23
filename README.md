@@ -46,7 +46,7 @@ Click **+ Add Account** and fill in:
 | Field | Where to find it |
 |-------|-----------------|
 | **Label** | Any name you choose (e.g. "Main Business") |
-| **API Key** | GHL → Settings → Integrations → API Keys → + Add Key → Private Integration Key |
+| **API Key** | GHL → Settings → Private Integrations → Create private integration |
 | **Location ID** | GHL → Settings → Business Profile (shown at the bottom of the page) |
 
 **Required API scopes:**
