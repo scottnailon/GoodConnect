@@ -53,7 +53,8 @@ class GoodConnect_Elementor {
             $custom = [];
             foreach ( $config['custom_fields'] as $row ) {
                 $key   = sanitize_text_field( $row['ghl_key'] ?? '' );
-                $value = $raw_fields[ $row['elementor_field_id'] ?? '' ]['value'] ?? '';
+                $field_id = $row['elementor_field'] ?? $row['elementor_field_id'] ?? $row['gf_field_id'] ?? '';
+                $value = $raw_fields[ $field_id ]['value'] ?? '';
                 if ( $key && $value !== '' ) {
                     $custom[] = [ 'id' => $key, 'field_value' => sanitize_text_field( $value ) ];
                 }

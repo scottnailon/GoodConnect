@@ -3,7 +3,7 @@
  * Plugin Name: GoodConnect
  * Plugin URI:  https://goodhost.com.au
  * Description: GoHighLevel integration for Gravity Forms, Elementor, and WooCommerce.
- * Version:     1.2.0
+ * Version:     1.2.1
  * Author:      GoodHost
  * Author URI:  https://goodhost.com.au
  * License:     GPL-2.0+
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'GOODCONNECT_VERSION', '1.2.0' );
+define( 'GOODCONNECT_VERSION', '1.2.1' );
 define( 'GOODCONNECT_PLUGIN_FILE', __FILE__ );
 define( 'GOODCONNECT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GOODCONNECT_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

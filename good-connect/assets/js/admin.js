@@ -148,9 +148,73 @@
         $( '#goodconnect-gf-mapper-wrap' ).show();
     }
 
-    function buildCustomFieldRow( ghlKey, gfFieldId, fields ) {
+    // Cache of fetched GHL custom fields keyed by account ID ('default' when no account selected).
+    var ghlCustomFieldsCache = {};
+
+    /**
+     * Fetch GHL custom fields for the given account ID, with caching.
+     * Calls callback( fields ) on success, where fields = [{id, name, fieldKey}, ...].
+     */
+    function loadGHLCustomFields( accountId, callback ) {
+        var cacheKey = accountId || 'default';
+        if ( ghlCustomFieldsCache[ cacheKey ] ) {
+            callback( ghlCustomFieldsCache[ cacheKey ] );
+            return;
+        }
+        $.post( GoodConnect.ajaxurl, {
+            action:     'goodconnect_fetch_ghl_custom_fields',
+            nonce:      GoodConnect.nonce,
+            account_id: accountId || '',
+        } )
+        .done( function ( res ) {
+            if ( res.success && res.data ) {
+                ghlCustomFieldsCache[ cacheKey ] = res.data;
+                callback( res.data );
+            } else {
+                alert( res.data || 'Could not load GHL custom fields.' );
+            }
+        } )
+        .fail( function () { alert( 'Request failed. Check your GHL API key.' ); } );
+    }
+
+    /**
+     * Build a <select> element populated with GHL custom fields.
+     * selectedId should match field.id or field.fieldKey.
+     */
+    function makeGHLFieldSelect( ghlFields, selectedId ) {
+        var $sel = $( '<select>' ).addClass( 'gc-custom-ghl-key-select' );
+        $sel.append( $( '<option>' ).val( '' ).text( '— Select GHL field —' ) );
+        $.each( ghlFields, function ( i, f ) {
+            var val = f.id || f.fieldKey || '';
+            $sel.append(
+                $( '<option>' ).val( val ).text( f.name )
+                               .prop( 'selected', val === selectedId || f.fieldKey === selectedId )
+            );
+        } );
+        return $sel;
+    }
+
+    /**
+     * Update all gc-custom-ghl-key-select dropdowns within $container to show the loaded fields.
+     */
+    function populateGHLSelects( $container, ghlFields ) {
+        $container.find( 'select.gc-custom-ghl-key-select' ).each( function () {
+            var $sel     = $( this );
+            var current  = $sel.val() || $sel.find( 'option:first' ).next().val() || '';
+            var $newSel  = makeGHLFieldSelect( ghlFields, current );
+            $newSel.addClass( $sel.attr( 'class' ) );
+            $sel.replaceWith( $newSel );
+        } );
+    }
+
+    function buildCustomFieldRow( ghlKey, gfFieldId, fields, ghlFields ) {
         var $row = $( '<div>' ).addClass( 'goodconnect-custom-field-row' );
-        $row.append( $( '<input type="text">' ).addClass( 'gc-custom-ghl-key' ).attr( 'placeholder', 'GHL field key' ).val( ghlKey || '' ) );
+        if ( ghlFields && ghlFields.length ) {
+            $row.append( makeGHLFieldSelect( ghlFields, ghlKey ) );
+        } else {
+            // Fallback to text input when GHL fields haven't been loaded yet.
+            $row.append( $( '<input type="text">' ).addClass( 'gc-custom-ghl-key' ).attr( 'placeholder', 'GHL field key' ).val( ghlKey || '' ) );
+        }
         $row.append( makeFieldSelect( fields, gfFieldId, 'gc-custom-gf-field', '' ) );
         $row.append( $( '<button type="button">' ).addClass( 'button goodconnect-remove-custom-field' ).text( '\u2715' ) );
         return $row;
@@ -188,6 +252,87 @@
         $( this ).closest( '.goodconnect-dynamic-tag-row' ).remove();
     } );
 
+    // =========================================================================
+    // LOAD FROM GHL — shared handler for all tabs
+    // =========================================================================
+
+    $( document ).on( 'click', '.goodconnect-load-ghl-fields', function () {
+        var $btn     = $( this );
+        var $card    = $btn.closest( '.goodconnect-card, .goodconnect-cf7-card, .goodconnect-elementor-card' );
+        var $status  = $btn.siblings( '.goodconnect-ghl-fields-status' );
+        var target   = $btn.data( 'target' ); // 'gf', 'elementor', 'cf7'
+
+        // Determine account ID from the nearest account selector in the same card.
+        var accountId = '';
+        if ( target === 'gf' ) {
+            accountId = $( '#goodconnect-gf-account' ).val();
+        } else {
+            accountId = $card.find( 'select[class*="account"]' ).val() || '';
+        }
+
+        $btn.prop( 'disabled', true );
+        $status.text( 'Loading…' );
+
+        loadGHLCustomFields( accountId, function ( fields ) {
+            $btn.prop( 'disabled', false );
+            $status.text( fields.length + ' fields loaded' );
+            setTimeout( function () { $status.text( '' ); }, 3000 );
+
+            // Populate existing selects within the relevant container.
+            if ( target === 'gf' ) {
+                populateGHLSelects( $( '#goodconnect-gf-custom-fields' ), fields );
+                // Store on the wrap for use when adding new rows.
+                $( '#goodconnect-gf-custom-fields-wrap' ).data( 'ghl-fields', fields );
+            } else if ( target === 'elementor' ) {
+                populateGHLSelects( $card.find( '.goodconnect-elementor-custom-fields' ), fields );
+                $card.find( '.goodconnect-elementor-custom-fields-wrap' ).data( 'ghl-fields', fields );
+            } else if ( target === 'cf7' ) {
+                populateGHLSelects( $card.find( '.goodconnect-cf7-custom-fields' ), fields );
+                $card.find( '.goodconnect-cf7-custom-fields-wrap' ).data( 'ghl-fields', fields );
+            }
+        } );
+    } );
+
+    // =========================================================================
+    // ELEMENTOR custom field add/remove/save
+    // =========================================================================
+
+    $( document ).on( 'click', '.goodconnect-add-elementor-custom-field', function () {
+        var $card     = $( this ).closest( '.goodconnect-elementor-card' );
+        var $wrap     = $card.find( '.goodconnect-elementor-custom-fields-wrap' );
+        var ghlFields = $wrap.data( 'ghl-fields' ) || [];
+        var $row      = $( '<div>' ).addClass( 'goodconnect-custom-field-row goodconnect-elementor-custom-field-row' );
+
+        if ( ghlFields.length ) {
+            $row.append( makeGHLFieldSelect( ghlFields, '' ) );
+        } else {
+            $row.append( $( '<input type="text">' ).addClass( 'gc-custom-ghl-key' ).attr( 'placeholder', 'GHL field key' ).val( '' ) );
+        }
+        $row.append( $( '<input type="text">' ).addClass( 'gc-custom-elementor-field' ).attr( 'placeholder', 'Elementor field ID' ) );
+        $row.append( $( '<button type="button">' ).addClass( 'button goodconnect-remove-custom-field' ).text( '\u2715' ) );
+        $card.find( '.goodconnect-elementor-custom-fields' ).append( $row );
+    } );
+
+    // =========================================================================
+    // CF7 custom field add/remove
+    // =========================================================================
+
+    $( document ).on( 'click', '.goodconnect-add-cf7-custom-field', function () {
+        var $card     = $( this ).closest( '.goodconnect-cf7-card' );
+        var $wrap     = $card.find( '.goodconnect-cf7-custom-fields-wrap' );
+        var ghlFields = $wrap.data( 'ghl-fields' ) || [];
+        var $row      = $( '<div>' ).addClass( 'goodconnect-custom-field-row goodconnect-cf7-custom-field-row' );
+
+        if ( ghlFields.length ) {
+            $row.append( makeGHLFieldSelect( ghlFields, '' ) );
+        } else {
+            $row.append( $( '<input type="text">' ).addClass( 'gc-custom-ghl-key' ).attr( 'placeholder', 'GHL field key' ).val( '' ) );
+        }
+        $row.append( $( '<input type="text">' ).addClass( 'gc-custom-cf7-field' ).attr( 'placeholder', 'CF7 field name' ) );
+        $row.append( $( '<button type="button">' ).addClass( 'button goodconnect-remove-custom-field' ).text( '\u2715' ) );
+        $card.find( '.goodconnect-cf7-custom-fields' ).append( $row );
+    } );
+
     $( '#goodconnect-save-gf' ).on( 'click', function () {
         if ( ! currentFormId ) return;
         var $btn      = $( this );
@@ -202,7 +347,10 @@
         } );
 
         $( '#goodconnect-gf-custom-fields .goodconnect-custom-field-row' ).each( function () {
-            var key = $( this ).find( '.gc-custom-ghl-key' ).val().trim();
+            // Support both select (after Load from GHL) and text input (fallback).
+            var key = $( this ).find( '.gc-custom-ghl-key-select' ).val()
+                   || $( this ).find( '.gc-custom-ghl-key' ).val() || '';
+            key = key.trim();
             var fid = $( this ).find( '.gc-custom-gf-field' ).val();
             if ( key && fid ) custom_fields.push( { ghl_key: key, gf_field_id: fid } );
         } );
@@ -266,14 +414,23 @@
             if ( val ) field_map[ ghlField ] = val;
         } );
 
+        var custom_fields = [];
+        $card.find( '.goodconnect-elementor-custom-field-row' ).each( function () {
+            var key   = $( this ).find( '.gc-custom-ghl-key-select' ).val()
+                     || $( this ).find( '.gc-custom-ghl-key' ).val() || '';
+            var field = $( this ).find( '.gc-custom-elementor-field' ).val() || '';
+            if ( key.trim() && field.trim() ) custom_fields.push( { ghl_key: key.trim(), elementor_field: field.trim() } );
+        } );
+
         setBusy( $btn, true, 'Save Mapping' );
         $.post( GoodConnect.ajaxurl, {
-            action:      'goodconnect_save_elementor_config',
-            nonce:       GoodConnect.nonce,
-            form_name:   form_name,
-            account_id:  $card.find( '.goodconnect-elementor-account' ).val(),
-            field_map:   field_map,
-            static_tags: $card.find( '.goodconnect-elementor-static-tags' ).val(),
+            action:        'goodconnect_save_elementor_config',
+            nonce:         GoodConnect.nonce,
+            form_name:     form_name,
+            account_id:    $card.find( '.goodconnect-elementor-account' ).val(),
+            field_map:     field_map,
+            custom_fields: custom_fields,
+            static_tags:   $card.find( '.goodconnect-elementor-static-tags' ).val(),
         } )
         .done( function ( res ) { showStatus( $btn, ! res.success ); } )
         .fail( function () { showStatus( $btn, true ); } )
@@ -296,14 +453,23 @@
             if ( val ) field_map[ ghlField ] = val;
         } );
 
+        var custom_fields = [];
+        $card.find( '.goodconnect-cf7-custom-field-row' ).each( function () {
+            var key   = $( this ).find( '.gc-custom-ghl-key-select' ).val()
+                     || $( this ).find( '.gc-custom-ghl-key' ).val() || '';
+            var field = $( this ).find( '.gc-custom-cf7-field' ).val() || '';
+            if ( key.trim() && field.trim() ) custom_fields.push( { ghl_key: key.trim(), cf7_field: field.trim() } );
+        } );
+
         setBusy( $btn, true, 'Save Mapping' );
         $.post( GoodConnect.ajaxurl, {
-            action:      'goodconnect_save_cf7_config',
-            nonce:       GoodConnect.nonce,
-            form_id:     form_id,
-            account_id:  $card.find( '.goodconnect-cf7-account' ).val(),
-            field_map:   field_map,
-            static_tags: $card.find( '.goodconnect-cf7-static-tags' ).val(),
+            action:        'goodconnect_save_cf7_config',
+            nonce:         GoodConnect.nonce,
+            form_id:       form_id,
+            account_id:    $card.find( '.goodconnect-cf7-account' ).val(),
+            field_map:     field_map,
+            custom_fields: custom_fields,
+            static_tags:   $card.find( '.goodconnect-cf7-static-tags' ).val(),
         } )
         .done( function ( res ) { showStatus( $btn, ! res.success ); } )
         .fail( function () { showStatus( $btn, true ); } )

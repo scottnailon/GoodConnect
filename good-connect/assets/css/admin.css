@@ -238,6 +238,10 @@
 .goodconnect-dynamic-tag-row select {
     flex: 1;
 }
+.goodconnect-custom-field-row .gc-custom-ghl-key-select {
+    min-width: 200px;
+    flex: none;
+}
 
 /* Log tab */
 .goodconnect-log-filters { margin-bottom: 16px; }

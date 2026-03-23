@@ -79,10 +79,14 @@ Map each GHL contact field to a Gravity Forms field.
 #### Custom Fields
 Map additional GHL custom fields beyond the standard contact fields.
 
-- **GHL field key** — the custom field key/ID from your GHL account (e.g. `service_type`)
+Click **Load from GHL** to automatically populate a dropdown of all custom fields from your GHL account — no manual key entry needed. The dropdown is populated per-account, so if you use multiple sub-accounts, the correct fields load for whichever account is selected.
+
+- **GHL field** — select from the loaded dropdown, or add a row first then load
 - **Gravity Forms field** — the form field whose value will be sent
 
-Click **+ Add Custom Field** to add more rows.
+Click **+ Add Custom Field** to add more rows. Click **Load from GHL** to refresh the dropdowns (results are cached for the page session).
+
+> **Note:** The **Load from GHL** button is available on Gravity Forms, Elementor, and Contact Form 7 tabs. All three use the same fetched field list for the selected account.
 
 #### Static Tags
 Enter a comma-separated list of tags to apply to every GHL contact created from this form.
@@ -110,6 +114,7 @@ Click **+ Add Form** and fill in:
 - **Form name** — must match the form name set in the Elementor form widget exactly (case-sensitive)
 - **GHL Account** — which sub-account to send to
 - **Field mapper** — enter the Elementor field ID (set in the widget's Advanced tab) next to each GHL field
+- **Custom Fields** — click **Load from GHL** to get a dropdown of GHL custom fields, then enter the Elementor field ID next to each
 - **Static Tags** — comma-separated tags applied to every contact from this form
 
 Click **Save Mapping** to save.
@@ -186,7 +191,15 @@ All data is removed when the plugin is uninstalled via **Plugins → Delete**.
 
 ## Changelog
 
-### 1.1.0
+### 1.2.1
+- GHL Custom Fields sync — "Load from GHL" button on Gravity Forms, Elementor, and Contact Form 7 tabs
+- Fetches all custom field names/keys from `GET /locations/{id}/customFields` for the selected account
+- Replaces manual key entry with a searchable dropdown, populated on demand
+- Results cached per-account for the page session (no repeated API calls)
+- Elementor and CF7 tabs now support custom field mapping (previously backend-only)
+- Backwards compatible — existing text-input key entries continue to work
+
+### 1.2.0
 - Multi-account support — manage multiple GHL sub-accounts, select per form
 - Static tags — comma-separated tags applied to every contact from a form
 - Dynamic tags — map a form field value as a GHL tag on submission

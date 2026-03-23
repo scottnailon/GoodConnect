@@ -11,6 +11,7 @@ class GoodConnect_Admin {
         add_action( 'wp_ajax_goodconnect_save_elementor_config', [ __CLASS__, 'ajax_save_elementor_config' ] );
         add_action( 'wp_ajax_goodconnect_save_woo_settings',     [ __CLASS__, 'ajax_save_woo_settings' ] );
         add_action( 'wp_ajax_goodconnect_save_cf7_config',       [ __CLASS__, 'ajax_save_cf7_config' ] );
+        add_action( 'wp_ajax_goodconnect_fetch_ghl_custom_fields', [ __CLASS__, 'ajax_fetch_ghl_custom_fields' ] );
         add_action( 'wp_ajax_goodconnect_bulk_sync_start',       [ __CLASS__, 'ajax_bulk_sync_start' ] );
         add_action( 'wp_ajax_goodconnect_bulk_sync_cancel',      [ __CLASS__, 'ajax_bulk_sync_cancel' ] );
         add_action( 'wp_ajax_goodconnect_bulk_sync_progress',    [ __CLASS__, 'ajax_bulk_sync_progress' ] );
@@ -258,9 +259,13 @@ class GoodConnect_Admin {
 
                 <div class="goodconnect-section" id="goodconnect-gf-custom-fields-wrap">
                     <label class="goodconnect-section-label"><?php esc_html_e( 'Custom Fields', 'good-connect' ); ?></label>
-                    <p class="description"><?php esc_html_e( 'Map additional GHL custom field keys to form fields.', 'good-connect' ); ?></p>
+                    <p class="description"><?php esc_html_e( 'Map GHL custom fields to form fields. Use "Load from GHL" to populate the dropdown with your account\'s custom fields.', 'good-connect' ); ?></p>
                     <div id="goodconnect-gf-custom-fields"></div>
-                    <button type="button" class="button goodconnect-add-custom-field" style="margin-top:8px;">+ <?php esc_html_e( 'Add Custom Field', 'good-connect' ); ?></button>
+                    <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
+                        <button type="button" class="button goodconnect-add-custom-field">+ <?php esc_html_e( 'Add Custom Field', 'good-connect' ); ?></button>
+                        <button type="button" class="button goodconnect-load-ghl-fields" data-target="gf"><?php esc_html_e( 'Load from GHL', 'good-connect' ); ?></button>
+                        <span class="goodconnect-ghl-fields-status" style="font-size:13px;color:#666;"></span>
+                    </div>
                 </div>
 
                 <div class="goodconnect-section">
@@ -312,9 +317,10 @@ class GoodConnect_Admin {
     }
 
     private static function render_elementor_form_card( string $form_name, array $config, array $ghl_fields ) {
-        $field_map   = $config['field_map']   ?? [];
-        $static_tags = implode( ', ', (array) ( $config['static_tags'] ?? [] ) );
-        $account_id  = $config['account_id']  ?? '';
+        $field_map     = $config['field_map']    ?? [];
+        $custom_fields = $config['custom_fields'] ?? [];
+        $static_tags   = implode( ', ', (array) ( $config['static_tags'] ?? [] ) );
+        $account_id    = $config['account_id']   ?? '';
         ?>
         <div class="goodconnect-card goodconnect-elementor-card">
             <div class="goodconnect-card-title-row">
@@ -350,6 +356,29 @@ class GoodConnect_Admin {
                                value="<?php echo esc_attr( $field_map[ $ghl_key ] ?? '' ); ?>" />
                     </div>
                 <?php endforeach; ?>
+            </div>
+
+            <div class="goodconnect-section goodconnect-elementor-custom-fields-wrap">
+                <label class="goodconnect-section-label"><?php esc_html_e( 'Custom Fields', 'good-connect' ); ?></label>
+                <p class="description"><?php esc_html_e( 'Map GHL custom fields to Elementor field IDs.', 'good-connect' ); ?></p>
+                <div class="goodconnect-elementor-custom-fields">
+                    <?php foreach ( $custom_fields as $row ) : ?>
+                        <div class="goodconnect-custom-field-row goodconnect-elementor-custom-field-row">
+                            <select class="gc-custom-ghl-key-select">
+                                <option value="<?php echo esc_attr( $row['ghl_key'] ?? '' ); ?>"><?php echo esc_html( $row['ghl_key'] ?? '' ); ?></option>
+                            </select>
+                            <input type="text" class="gc-custom-elementor-field"
+                                   placeholder="<?php esc_attr_e( 'Elementor field ID', 'good-connect' ); ?>"
+                                   value="<?php echo esc_attr( $row['elementor_field'] ?? $row['gf_field_id'] ?? '' ); ?>" />
+                            <button type="button" class="button goodconnect-remove-custom-field">&times;</button>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
+                    <button type="button" class="button goodconnect-add-elementor-custom-field">+ <?php esc_html_e( 'Add Custom Field', 'good-connect' ); ?></button>
+                    <button type="button" class="button goodconnect-load-ghl-fields" data-target="elementor"><?php esc_html_e( 'Load from GHL', 'good-connect' ); ?></button>
+                    <span class="goodconnect-ghl-fields-status" style="font-size:13px;color:#666;"></span>
+                </div>
             </div>
 
             <div class="goodconnect-section">
@@ -440,9 +469,10 @@ class GoodConnect_Admin {
         <p class="description"><?php esc_html_e( 'Map Contact Form 7 field names to GHL contact fields. Use the field name set in the CF7 form tag (e.g. your-email).', 'good-connect' ); ?></p>
 
         <?php foreach ( $forms as $form ) :
-            $form_id = $form->ID;
-            $config  = GoodConnect_CF7::get_form_config( $form_id );
-            $field_map   = $config['field_map']   ?? [];
+            $form_id       = $form->ID;
+            $config        = GoodConnect_CF7::get_form_config( $form_id );
+            $field_map     = $config['field_map']    ?? [];
+            $custom_fields = $config['custom_fields'] ?? [];
             $static_tags = implode( ', ', (array) ( $config['static_tags'] ?? [] ) );
             $account_id  = $config['account_id']  ?? '';
         ?>
@@ -478,6 +508,29 @@ class GoodConnect_Admin {
                                value="<?php echo esc_attr( $field_map[ $ghl_key ] ?? '' ); ?>" />
                     </div>
                 <?php endforeach; ?>
+            </div>
+
+            <div class="goodconnect-section goodconnect-cf7-custom-fields-wrap">
+                <label class="goodconnect-section-label"><?php esc_html_e( 'Custom Fields', 'good-connect' ); ?></label>
+                <p class="description"><?php esc_html_e( 'Map GHL custom fields to CF7 field names.', 'good-connect' ); ?></p>
+                <div class="goodconnect-cf7-custom-fields">
+                    <?php foreach ( $custom_fields as $row ) : ?>
+                        <div class="goodconnect-custom-field-row goodconnect-cf7-custom-field-row">
+                            <select class="gc-custom-ghl-key-select">
+                                <option value="<?php echo esc_attr( $row['ghl_key'] ?? '' ); ?>"><?php echo esc_html( $row['ghl_key'] ?? '' ); ?></option>
+                            </select>
+                            <input type="text" class="gc-custom-cf7-field"
+                                   placeholder="<?php esc_attr_e( 'CF7 field name', 'good-connect' ); ?>"
+                                   value="<?php echo esc_attr( $row['cf7_field'] ?? '' ); ?>" />
+                            <button type="button" class="button goodconnect-remove-custom-field">&times;</button>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
+                    <button type="button" class="button goodconnect-add-cf7-custom-field">+ <?php esc_html_e( 'Add Custom Field', 'good-connect' ); ?></button>
+                    <button type="button" class="button goodconnect-load-ghl-fields" data-target="cf7"><?php esc_html_e( 'Load from GHL', 'good-connect' ); ?></button>
+                    <span class="goodconnect-ghl-fields-status" style="font-size:13px;color:#666;"></span>
+                </div>
             </div>
 
             <div class="goodconnect-section">
@@ -696,13 +749,21 @@ class GoodConnect_Admin {
             if ( $ghl_field && $elementor_field_id !== '' ) $field_map[ $ghl_field ] = $elementor_field_id;
         }
 
+        $raw_custom = (array) ( $_POST['custom_fields'] ?? [] );
+        $custom_fields = [];
+        foreach ( $raw_custom as $row ) {
+            $key   = sanitize_text_field( $row['ghl_key']        ?? '' );
+            $field = sanitize_text_field( $row['elementor_field'] ?? '' );
+            if ( $key && $field ) $custom_fields[] = [ 'ghl_key' => $key, 'elementor_field' => $field ];
+        }
+
         $raw_static = sanitize_text_field( $_POST['static_tags'] ?? '' );
         $static_tags = array_values( array_filter( array_map( 'trim', explode( ',', $raw_static ) ) ) );
 
         $config = [
             'account_id'    => sanitize_text_field( $_POST['account_id'] ?? '' ),
             'field_map'     => $field_map,
-            'custom_fields' => [],
+            'custom_fields' => $custom_fields,
             'static_tags'   => $static_tags,
             'dynamic_tags'  => [],
         ];
@@ -729,6 +790,47 @@ class GoodConnect_Admin {
         wp_send_json_success();
     }
 
+    public static function ajax_fetch_ghl_custom_fields() {
+        check_ajax_referer( 'goodconnect_admin', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
+
+        $account_id = sanitize_text_field( $_POST['account_id'] ?? '' );
+        $account    = $account_id
+            ? GoodConnect_Settings::get_account_by_id( $account_id )
+            : GoodConnect_Settings::get_default_account();
+
+        if ( ! $account ) {
+            wp_send_json_error( __( 'No GHL account found. Please save your account settings first.', 'good-connect' ) );
+        }
+
+        $client = new GoodConnect_GHL_Client( $account );
+        $result = $client->get_custom_fields();
+
+        if ( is_wp_error( $result ) ) {
+            wp_send_json_error( $result->get_error_message() );
+        }
+
+        // Normalise — GHL returns varying shapes depending on API version.
+        $fields = [];
+        foreach ( (array) $result as $field ) {
+            $id   = $field['id']       ?? $field['fieldKey'] ?? '';
+            $name = $field['name']     ?? $field['label']    ?? $id;
+            $key  = $field['fieldKey'] ?? $field['id']       ?? '';
+            if ( $id ) {
+                $fields[] = [
+                    'id'       => $id,
+                    'name'     => $name,
+                    'fieldKey' => $key,
+                ];
+            }
+        }
+
+        // Sort alphabetically by name.
+        usort( $fields, fn( $a, $b ) => strcmp( $a['name'], $b['name'] ) );
+
+        wp_send_json_success( $fields );
+    }
+
     public static function ajax_save_cf7_config() {
         check_ajax_referer( 'goodconnect_admin', 'nonce' );
         if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
@@ -744,13 +846,21 @@ class GoodConnect_Admin {
             if ( $ghl_field && $cf7_field !== '' ) $field_map[ $ghl_field ] = $cf7_field;
         }
 
+        $raw_custom  = (array) ( $_POST['custom_fields'] ?? [] );
+        $custom_fields = [];
+        foreach ( $raw_custom as $row ) {
+            $key   = sanitize_text_field( $row['ghl_key']   ?? '' );
+            $field = sanitize_text_field( $row['cf7_field'] ?? '' );
+            if ( $key && $field ) $custom_fields[] = [ 'ghl_key' => $key, 'cf7_field' => $field ];
+        }
+
         $raw_static  = sanitize_text_field( $_POST['static_tags'] ?? '' );
         $static_tags = array_values( array_filter( array_map( 'trim', explode( ',', $raw_static ) ) ) );
 
         $config = [
             'account_id'    => sanitize_text_field( $_POST['account_id'] ?? '' ),
             'field_map'     => $field_map,
-            'custom_fields' => [],
+            'custom_fields' => $custom_fields,
             'static_tags'   => $static_tags,
             'dynamic_tags'  => [],
             'conditions'    => [ 'enabled' => false, 'operator' => 'AND', 'rules' => [] ],

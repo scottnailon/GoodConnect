@@ -45,6 +45,21 @@ class GoodConnect_GHL_Client {
         return $this->request( 'GET', '/contacts/' . rawurlencode( $contact_id ) );
     }
 
+    /**
+     * Get all custom fields for the location.
+     * Returns array of [ 'id' => ..., 'name' => ..., 'fieldKey' => ..., 'dataType' => ... ]
+     *
+     * @return array|WP_Error
+     */
+    public function get_custom_fields() {
+        if ( empty( $this->location_id ) ) {
+            return new WP_Error( 'goodconnect_no_location', __( 'GoodConnect: No Location ID configured.', 'good-connect' ) );
+        }
+        $result = $this->request( 'GET', '/locations/' . rawurlencode( $this->location_id ) . '/customFields' );
+        if ( is_wp_error( $result ) ) return $result;
+        return $result['customFields'] ?? $result['fields'] ?? [];
+    }
+
     public function trigger_webhook( string $webhook_url, array $data ) {
         $parsed        = wp_parse_url( $webhook_url );
         $allowed_hosts = [ 'services.leadconnectorhq.com', 'backend.leadconnectorhq.com', 'hooks.zapier.com' ];
