@@ -1,0 +1,176 @@
+/* GoodConnect Admin Styles */
+
+.goodconnect-wrap {
+    max-width: 900px;
+}
+
+.goodconnect-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px !important;
+}
+
+.goodconnect-logo {
+    color: #2563eb;
+    font-size: 20px;
+}
+
+.goodconnect-tagline {
+    font-size: 14px;
+    font-weight: 400;
+    color: #666;
+    margin-left: 4px;
+}
+
+/* Tabs */
+.goodconnect-tabs {
+    margin-bottom: 20px;
+}
+
+/* Cards */
+.goodconnect-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+}
+
+.goodconnect-card-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.goodconnect-card-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.goodconnect-card-title-row .regular-text {
+    flex: 1;
+}
+
+.goodconnect-form-id {
+    font-size: 12px;
+    font-weight: 400;
+    color: #999;
+}
+
+/* Mapper grid */
+.goodconnect-mapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.goodconnect-mapper-header {
+    display: contents;
+}
+
+.goodconnect-mapper-header span {
+    background: #f3f4f6;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #6b7280;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.goodconnect-mapper-row {
+    display: contents;
+}
+
+.goodconnect-mapper-row label,
+.goodconnect-mapper-row input,
+.goodconnect-mapper-row select {
+    padding: 9px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 13px;
+    margin: 0;
+}
+
+.goodconnect-mapper-row label {
+    display: flex;
+    align-items: center;
+    background: #fafafa;
+    font-weight: 500;
+    color: #374151;
+    border-right: 1px solid #e5e7eb;
+}
+
+.goodconnect-mapper-row select,
+.goodconnect-mapper-row input[type="text"] {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid #f0f0f0;
+    border-radius: 0;
+    box-shadow: none;
+    outline: none;
+}
+
+.goodconnect-mapper-row select:focus,
+.goodconnect-mapper-row input[type="text"]:focus {
+    background: #eff6ff;
+    box-shadow: none;
+    outline: none;
+}
+
+/* Card footer */
+.goodconnect-card-footer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-top: 4px;
+}
+
+.goodconnect-save-status {
+    font-size: 13px;
+    color: #16a34a;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.goodconnect-save-status.visible {
+    opacity: 1;
+}
+
+.goodconnect-save-status.error {
+    color: #dc2626;
+}
+
+/* Field list (WooCommerce tab) */
+.goodconnect-field-list {
+    margin: 8px 0 16px 20px;
+    color: #555;
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+/* Toggle */
+.goodconnect-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-bottom: 16px;
+}
+
+/* Add form button area */
+#goodconnect-elementor-forms {
+    margin-top: 16px;
+}
