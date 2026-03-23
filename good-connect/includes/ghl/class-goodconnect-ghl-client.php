@@ -1,65 +1,45 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-/**
- * GHL API v2 client.
- * Handles authenticated requests to the GoHighLevel REST API.
- */
 class GoodConnect_GHL_Client {
 
     const API_BASE = 'https://services.leadconnectorhq.com';
 
     private string $api_key;
     private string $location_id;
+    private string $account_id;
 
-    public function __construct() {
-        $this->api_key     = GoodConnect_Settings::get( 'api_key' );
-        $this->location_id = GoodConnect_Settings::get( 'location_id' );
+    public function __construct( array $account = [] ) {
+        if ( empty( $account ) ) {
+            $account = GoodConnect_Settings::get_default_account() ?? [];
+        }
+        $this->api_key     = $account['api_key']     ?? '';
+        $this->location_id = $account['location_id'] ?? '';
+        $this->account_id  = $account['id']          ?? '';
     }
 
-    /**
-     * Create or update a contact in GHL.
-     *
-     * @param array $data  Associative array of contact fields.
-     * @return array|WP_Error  GHL API response body or WP_Error on failure.
-     */
+    public function get_account_id(): string {
+        return $this->account_id;
+    }
+
     public function upsert_contact( array $data ) {
         $data['locationId'] = $this->location_id;
-
         return $this->request( 'POST', '/contacts/upsert', $data );
     }
 
-    /**
-     * Create an opportunity in GHL.
-     *
-     * @param array $data
-     * @return array|WP_Error
-     */
     public function create_opportunity( array $data ) {
         $data['locationId'] = $this->location_id;
-
         return $this->request( 'POST', '/opportunities/', $data );
     }
 
-    /**
-     * Trigger a GHL workflow via webhook URL.
-     *
-     * @param string $webhook_url
-     * @param array  $data
-     * @return array|WP_Error
-     */
     public function trigger_webhook( string $webhook_url, array $data ) {
-        // Only allow HTTPS URLs pointing to GHL's webhook domains.
-        $parsed = wp_parse_url( $webhook_url );
+        $parsed        = wp_parse_url( $webhook_url );
         $allowed_hosts = [ 'services.leadconnectorhq.com', 'backend.leadconnectorhq.com', 'hooks.zapier.com' ];
         if (
             empty( $parsed['scheme'] ) || $parsed['scheme'] !== 'https' ||
-            empty( $parsed['host'] ) || ! in_array( $parsed['host'], $allowed_hosts, true )
+            empty( $parsed['host'] )   || ! in_array( $parsed['host'], $allowed_hosts, true )
         ) {
-            return new WP_Error(
-                'goodconnect_invalid_webhook',
-                __( 'GoodConnect: Webhook URL must be an HTTPS GoHighLevel webhook URL.', 'good-connect' )
-            );
+            return new WP_Error( 'goodconnect_invalid_webhook', __( 'GoodConnect: Webhook URL must be an HTTPS GoHighLevel webhook URL.', 'good-connect' ) );
         }
 
         $response = wp_remote_post( $webhook_url, [
@@ -68,16 +48,10 @@ class GoodConnect_GHL_Client {
             'timeout' => 15,
         ] );
 
-        if ( is_wp_error( $response ) ) {
-            return $response;
-        }
-
+        if ( is_wp_error( $response ) ) return $response;
         return json_decode( wp_remote_retrieve_body( $response ), true ) ?? [];
     }
 
-    /**
-     * Internal HTTP request helper.
-     */
     private function request( string $method, string $endpoint, array $body = [] ) {
         if ( empty( $this->api_key ) ) {
             return new WP_Error( 'goodconnect_no_api_key', __( 'GoodConnect: No API key configured.', 'good-connect' ) );
@@ -94,9 +68,7 @@ class GoodConnect_GHL_Client {
             'timeout' => 15,
         ] );
 
-        if ( is_wp_error( $response ) ) {
-            return $response;
-        }
+        if ( is_wp_error( $response ) ) return $response;
 
         $code = wp_remote_retrieve_response_code( $response );
         $data = json_decode( wp_remote_retrieve_body( $response ), true );

@@ -191,3 +191,58 @@
 #goodconnect-gf-mapper-wrap .goodconnect-card {
     margin-top: 0;
 }
+
+/* Accounts */
+.goodconnect-account-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+    flex-wrap: wrap;
+}
+.goodconnect-account-row input[type="text"],
+.goodconnect-account-row input[type="password"] {
+    flex: 1;
+    min-width: 140px;
+}
+.goodconnect-accounts-actions { margin-top: 12px; }
+.gc-account-default-label { white-space: nowrap; font-size: 13px; }
+
+/* Sections within a card */
+.goodconnect-section {
+    margin: 16px 0 0;
+    padding-top: 16px;
+    border-top: 1px solid #f0f0f0;
+}
+.goodconnect-section-label {
+    display: block;
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 6px;
+    color: #374151;
+}
+
+/* Custom field rows */
+.goodconnect-custom-field-row,
+.goodconnect-dynamic-tag-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.goodconnect-custom-field-row input[type="text"] {
+    width: 160px;
+}
+.goodconnect-custom-field-row select,
+.goodconnect-dynamic-tag-row select {
+    flex: 1;
+}
+
+/* Log tab */
+.goodconnect-log-filters { margin-bottom: 16px; }
+.goodconnect-log-filters select,
+.goodconnect-log-filters button { margin-right: 6px; vertical-align: middle; }
+.goodconnect-status { font-size: 12px; font-weight: 600; padding: 2px 6px; border-radius: 3px; }
+.goodconnect-status--ok   { background: #dcfce7; color: #15803d; }
+.goodconnect-status--fail { background: #fee2e2; color: #b91c1c; cursor: help; }

@@ -6,10 +6,11 @@ class GoodConnect_Admin {
     public static function init() {
         add_action( 'admin_menu', [ __CLASS__, 'register_menu' ] );
         add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_assets' ] );
-        add_action( 'wp_ajax_goodconnect_save_gf_mapping', [ __CLASS__, 'ajax_save_gf_mapping' ] );
-        add_action( 'wp_ajax_goodconnect_save_elementor_mapping', [ __CLASS__, 'ajax_save_elementor_mapping' ] );
-        add_action( 'wp_ajax_goodconnect_save_woo_settings', [ __CLASS__, 'ajax_save_woo_settings' ] );
-        add_action( 'wp_ajax_goodconnect_get_gf_form', [ __CLASS__, 'ajax_get_gf_form' ] );
+        add_action( 'wp_ajax_goodconnect_save_accounts',         [ __CLASS__, 'ajax_save_accounts' ] );
+        add_action( 'wp_ajax_goodconnect_save_gf_config',        [ __CLASS__, 'ajax_save_gf_config' ] );
+        add_action( 'wp_ajax_goodconnect_save_elementor_config', [ __CLASS__, 'ajax_save_elementor_config' ] );
+        add_action( 'wp_ajax_goodconnect_save_woo_settings',     [ __CLASS__, 'ajax_save_woo_settings' ] );
+        add_action( 'wp_ajax_goodconnect_clear_log',             [ __CLASS__, 'ajax_clear_log' ] );
     }
 
     public static function register_menu() {
@@ -25,33 +26,27 @@ class GoodConnect_Admin {
     }
 
     public static function enqueue_assets( $hook ) {
-        if ( $hook !== 'toplevel_page_good-connect' ) {
-            return;
-        }
-        wp_enqueue_style(
-            'goodconnect-admin',
-            GOODCONNECT_PLUGIN_URL . 'assets/css/admin.css',
-            [],
-            GOODCONNECT_VERSION
-        );
-        wp_enqueue_script(
-            'goodconnect-admin',
-            GOODCONNECT_PLUGIN_URL . 'assets/js/admin.js',
-            [ 'jquery' ],
-            GOODCONNECT_VERSION,
-            true
-        );
+        if ( $hook !== 'toplevel_page_good-connect' ) return;
+
+        wp_enqueue_style( 'goodconnect-admin', GOODCONNECT_PLUGIN_URL . 'assets/css/admin.css', [], GOODCONNECT_VERSION );
+        wp_enqueue_script( 'goodconnect-admin', GOODCONNECT_PLUGIN_URL . 'assets/js/admin.js', [ 'jquery' ], GOODCONNECT_VERSION, true );
+
         wp_localize_script( 'goodconnect-admin', 'GoodConnect', [
-            'nonce'   => wp_create_nonce( 'goodconnect_admin' ),
-            'ajaxurl' => admin_url( 'admin-ajax.php' ),
-            'strings' => [
-                'saved'   => __( 'Saved!', 'good-connect' ),
-                'saving'  => __( 'Saving…', 'good-connect' ),
-                'error'   => __( 'Error saving. Please try again.', 'good-connect' ),
+            'nonce'    => wp_create_nonce( 'goodconnect_admin' ),
+            'ajaxurl'  => admin_url( 'admin-ajax.php' ),
+            'accounts' => GoodConnect_Settings::get_accounts(),
+            'strings'  => [
+                'saved'          => __( 'Saved!', 'good-connect' ),
+                'saving'         => __( 'Saving…', 'good-connect' ),
+                'error'          => __( 'Error saving. Please try again.', 'good-connect' ),
+                'confirmDelete'  => __( 'Delete this account?', 'good-connect' ),
+                'confirmClear'   => __( 'Clear all log entries? This cannot be undone.', 'good-connect' ),
+                'addTag'         => __( 'Add Tag', 'good-connect' ),
+                'addCustomField' => __( 'Add Custom Field', 'good-connect' ),
             ],
         ] );
 
-        // Pass GF form data + mappings to JS if GF is active.
+        // Pass GF form data + configs to JS.
         if ( class_exists( 'GFForms' ) && class_exists( 'GFAPI' ) ) {
             $forms      = GFFormsModel::get_forms( true );
             $forms_data = [];
@@ -59,16 +54,28 @@ class GoodConnect_Admin {
                 $form_obj = GFAPI::get_form( $form->id );
                 $fields   = [];
                 foreach ( $form_obj['fields'] as $field ) {
-                    $fields[] = [
-                        'id'    => (string) $field->id,
-                        'label' => $field->label ?: 'Field ' . $field->id,
-                    ];
+                    // Expand name fields into subfields.
+                    if ( $field->type === 'name' && ! empty( $field->inputs ) ) {
+                        foreach ( $field->inputs as $input ) {
+                            if ( ! empty( $input['isHidden'] ) ) continue;
+                            $fields[] = [
+                                'id'    => (string) $input['id'],
+                                'label' => esc_html( $field->label ) . ' — ' . esc_html( $input['label'] ),
+                            ];
+                        }
+                    } else {
+                        $fields[] = [
+                            'id'    => (string) $field->id,
+                            'label' => $field->label ?: 'Field ' . $field->id,
+                        ];
+                    }
                 }
+                $config     = GoodConnect_GF::get_form_config( (int) $form->id );
                 $forms_data[] = [
-                    'id'      => (int) $form->id,
-                    'title'   => $form->title,
-                    'fields'  => $fields,
-                    'mapping' => GoodConnect_GF::get_field_mapping( (int) $form->id ),
+                    'id'     => (int) $form->id,
+                    'title'  => $form->title,
+                    'fields' => $fields,
+                    'config' => $config,
                 ];
             }
             wp_localize_script( 'goodconnect-admin', 'GoodConnectGF', [
@@ -86,13 +93,13 @@ class GoodConnect_Admin {
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_die( esc_html__( 'You do not have permission to access this page.', 'good-connect' ) );
         }
-
         $active_tab = sanitize_key( $_GET['tab'] ?? 'settings' );
         $tabs = [
-            'settings'     => __( 'Settings', 'good-connect' ),
-            'gravity-forms'=> __( 'Gravity Forms', 'good-connect' ),
-            'elementor'    => __( 'Elementor', 'good-connect' ),
-            'woocommerce'  => __( 'WooCommerce', 'good-connect' ),
+            'settings'      => __( 'Settings', 'good-connect' ),
+            'gravity-forms' => __( 'Gravity Forms', 'good-connect' ),
+            'elementor'     => __( 'Elementor', 'good-connect' ),
+            'woocommerce'   => __( 'WooCommerce', 'good-connect' ),
+            'log'           => __( 'Activity Log', 'good-connect' ),
         ];
         ?>
         <div class="wrap goodconnect-wrap">
@@ -101,7 +108,6 @@ class GoodConnect_Admin {
                 <?php esc_html_e( 'GoodConnect', 'good-connect' ); ?>
                 <span class="goodconnect-tagline"><?php esc_html_e( 'GoHighLevel Integration', 'good-connect' ); ?></span>
             </h1>
-
             <nav class="nav-tab-wrapper goodconnect-tabs">
                 <?php foreach ( $tabs as $slug => $label ) : ?>
                     <a href="<?php echo esc_url( admin_url( 'admin.php?page=good-connect&tab=' . $slug ) ); ?>"
@@ -110,21 +116,14 @@ class GoodConnect_Admin {
                     </a>
                 <?php endforeach; ?>
             </nav>
-
             <div class="goodconnect-tab-content">
                 <?php
                 switch ( $active_tab ) {
-                    case 'gravity-forms':
-                        self::render_gf_tab();
-                        break;
-                    case 'elementor':
-                        self::render_elementor_tab();
-                        break;
-                    case 'woocommerce':
-                        self::render_woo_tab();
-                        break;
-                    default:
-                        self::render_settings_tab();
+                    case 'gravity-forms': self::render_gf_tab();       break;
+                    case 'elementor':     self::render_elementor_tab(); break;
+                    case 'woocommerce':   self::render_woo_tab();       break;
+                    case 'log':           self::render_log_tab();       break;
+                    default:              self::render_settings_tab();
                 }
                 ?>
             </div>
@@ -133,61 +132,75 @@ class GoodConnect_Admin {
     }
 
     // -------------------------------------------------------------------------
-    // Settings tab
+    // Settings tab — Accounts manager
     // -------------------------------------------------------------------------
 
     private static function render_settings_tab() {
+        $accounts = GoodConnect_Settings::get_accounts();
         ?>
-        <form method="post" action="options.php">
-            <?php
-            settings_fields( 'goodconnect' );
-            $options = get_option( GoodConnect_Settings::OPTION_KEY, [] );
-            ?>
-            <table class="form-table">
-                <tr>
-                    <th scope="row"><label for="gc_api_key"><?php esc_html_e( 'GHL API Key', 'good-connect' ); ?></label></th>
-                    <td>
-                        <input type="password" id="gc_api_key"
-                               name="<?php echo esc_attr( GoodConnect_Settings::OPTION_KEY ); ?>[api_key]"
-                               value="<?php echo esc_attr( $options['api_key'] ?? '' ); ?>"
-                               class="regular-text" autocomplete="new-password" />
-                        <p class="description">
-                            <?php esc_html_e( 'Your GoHighLevel Private Integration API key.', 'good-connect' ); ?><br><br>
-                            <strong><?php esc_html_e( 'How to create your API key:', 'good-connect' ); ?></strong>
-                            <ol style="margin:6px 0 0 18px;line-height:1.9">
-                                <li><?php esc_html_e( 'In GoHighLevel, go to', 'good-connect' ); ?> <strong><?php esc_html_e( 'Settings → Integrations → API Keys', 'good-connect' ); ?></strong></li>
-                                <li><?php esc_html_e( 'Click', 'good-connect' ); ?> <strong><?php esc_html_e( '+ Add Key', 'good-connect' ); ?></strong> <?php esc_html_e( 'and choose', 'good-connect' ); ?> <strong><?php esc_html_e( 'Private Integration Key', 'good-connect' ); ?></strong></li>
-                                <li><?php esc_html_e( 'Under Scopes, enable the following:', 'good-connect' ); ?>
-                                    <ul style="margin:4px 0 4px 18px;list-style:disc">
-                                        <li><code>contacts.read</code> &mdash; <?php esc_html_e( 'look up existing contacts', 'good-connect' ); ?></li>
-                                        <li><code>contacts.write</code> &mdash; <?php esc_html_e( 'create and update contacts', 'good-connect' ); ?></li>
-                                        <li><code>opportunities.read</code> &mdash; <?php esc_html_e( 'look up opportunities (optional)', 'good-connect' ); ?></li>
-                                        <li><code>opportunities.write</code> &mdash; <?php esc_html_e( 'create opportunities (optional)', 'good-connect' ); ?></li>
-                                    </ul>
-                                </li>
-                                <li><?php esc_html_e( 'Click', 'good-connect' ); ?> <strong><?php esc_html_e( 'Save', 'good-connect' ); ?></strong> <?php esc_html_e( 'then copy the key and paste it here.', 'good-connect' ); ?></li>
-                            </ol>
-                        </p>
-                    </td>
-                </tr>
-                <tr>
-                    <th scope="row"><label for="gc_location_id"><?php esc_html_e( 'Location ID', 'good-connect' ); ?></label></th>
-                    <td>
-                        <input type="text" id="gc_location_id"
-                               name="<?php echo esc_attr( GoodConnect_Settings::OPTION_KEY ); ?>[location_id]"
-                               value="<?php echo esc_attr( $options['location_id'] ?? '' ); ?>"
-                               class="regular-text" />
-                        <p class="description">
-                            <?php esc_html_e( 'The GHL Location (sub-account) ID to send data to.', 'good-connect' ); ?><br>
-                            <?php esc_html_e( 'To find this: in GoHighLevel go to', 'good-connect' ); ?>
-                            <strong><?php esc_html_e( 'Settings → Business Profile', 'good-connect' ); ?></strong>
-                            <?php esc_html_e( '— the Location ID is shown at the bottom of the page.', 'good-connect' ); ?>
-                        </p>
-                    </td>
-                </tr>
-            </table>
-            <?php submit_button(); ?>
-        </form>
+        <div class="goodconnect-card">
+            <h3 class="goodconnect-card-title"><?php esc_html_e( 'GoHighLevel Accounts', 'good-connect' ); ?></h3>
+            <p class="description"><?php esc_html_e( 'Add one or more GHL sub-accounts. Each form can be configured to send to a specific account.', 'good-connect' ); ?></p>
+
+            <div id="goodconnect-accounts-list">
+                <?php foreach ( $accounts as $account ) : ?>
+                    <div class="goodconnect-account-row" data-id="<?php echo esc_attr( $account['id'] ); ?>">
+                        <input type="text" class="gc-account-label" placeholder="<?php esc_attr_e( 'Account label', 'good-connect' ); ?>" value="<?php echo esc_attr( $account['label'] ); ?>" />
+                        <input type="password" class="gc-account-apikey" placeholder="<?php esc_attr_e( 'API Key', 'good-connect' ); ?>" value="<?php echo esc_attr( $account['api_key'] ); ?>" autocomplete="new-password" />
+                        <input type="text" class="gc-account-locationid" placeholder="<?php esc_attr_e( 'Location ID', 'good-connect' ); ?>" value="<?php echo esc_attr( $account['location_id'] ); ?>" />
+                        <label class="gc-account-default-label">
+                            <input type="radio" name="gc_default_account" class="gc-account-default" value="<?php echo esc_attr( $account['id'] ); ?>" <?php checked( ! empty( $account['is_default'] ) ); ?> />
+                            <?php esc_html_e( 'Default', 'good-connect' ); ?>
+                        </label>
+                        <button type="button" class="button goodconnect-remove-account"><?php esc_html_e( 'Remove', 'good-connect' ); ?></button>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="goodconnect-accounts-actions">
+                <button type="button" class="button" id="goodconnect-add-account">+ <?php esc_html_e( 'Add Account', 'good-connect' ); ?></button>
+            </div>
+
+            <div class="goodconnect-card-footer" style="margin-top:16px;">
+                <button type="button" class="button button-primary" id="goodconnect-save-accounts"><?php esc_html_e( 'Save Accounts', 'good-connect' ); ?></button>
+                <span class="goodconnect-save-status"></span>
+            </div>
+        </div>
+
+        <div class="goodconnect-card">
+            <h3 class="goodconnect-card-title"><?php esc_html_e( 'How to create your API key', 'good-connect' ); ?></h3>
+            <ol style="margin:6px 0 0 18px;line-height:1.9">
+                <li><?php esc_html_e( 'In GoHighLevel, go to', 'good-connect' ); ?> <strong><?php esc_html_e( 'Settings → Integrations → API Keys', 'good-connect' ); ?></strong></li>
+                <li><?php esc_html_e( 'Click', 'good-connect' ); ?> <strong><?php esc_html_e( '+ Add Key', 'good-connect' ); ?></strong> <?php esc_html_e( 'and choose', 'good-connect' ); ?> <strong><?php esc_html_e( 'Private Integration Key', 'good-connect' ); ?></strong></li>
+                <li><?php esc_html_e( 'Enable scopes:', 'good-connect' ); ?>
+                    <ul style="margin:4px 0 4px 18px;list-style:disc">
+                        <li><code>contacts.read</code> &mdash; <?php esc_html_e( 'look up existing contacts', 'good-connect' ); ?></li>
+                        <li><code>contacts.write</code> &mdash; <?php esc_html_e( 'create and update contacts', 'good-connect' ); ?></li>
+                        <li><code>opportunities.read</code> &mdash; <?php esc_html_e( 'look up opportunities (optional)', 'good-connect' ); ?></li>
+                        <li><code>opportunities.write</code> &mdash; <?php esc_html_e( 'create opportunities (optional)', 'good-connect' ); ?></li>
+                    </ul>
+                </li>
+                <li><?php esc_html_e( 'Click Save then copy the key and paste it above.', 'good-connect' ); ?></li>
+            </ol>
+            <p class="description" style="margin-top:10px;">
+                <?php esc_html_e( 'To find your Location ID: go to', 'good-connect' ); ?>
+                <strong><?php esc_html_e( 'Settings → Business Profile', 'good-connect' ); ?></strong>
+                <?php esc_html_e( '— the Location ID is shown at the bottom of the page.', 'good-connect' ); ?>
+            </p>
+        </div>
+
+        <template id="goodconnect-account-row-template">
+            <div class="goodconnect-account-row" data-id="">
+                <input type="text" class="gc-account-label" placeholder="<?php esc_attr_e( 'Account label', 'good-connect' ); ?>" value="" />
+                <input type="password" class="gc-account-apikey" placeholder="<?php esc_attr_e( 'API Key', 'good-connect' ); ?>" value="" autocomplete="new-password" />
+                <input type="text" class="gc-account-locationid" placeholder="<?php esc_attr_e( 'Location ID', 'good-connect' ); ?>" value="" />
+                <label class="gc-account-default-label">
+                    <input type="radio" name="gc_default_account" class="gc-account-default" value="" />
+                    <?php esc_html_e( 'Default', 'good-connect' ); ?>
+                </label>
+                <button type="button" class="button goodconnect-remove-account"><?php esc_html_e( 'Remove', 'good-connect' ); ?></button>
+            </div>
+        </template>
         <?php
     }
 
@@ -200,42 +213,61 @@ class GoodConnect_Admin {
             echo '<div class="notice notice-warning inline"><p>' . esc_html__( 'Gravity Forms is not active.', 'good-connect' ) . '</p></div>';
             return;
         }
-
         $forms = GFFormsModel::get_forms( true );
         if ( empty( $forms ) ) {
             echo '<p>' . esc_html__( 'No Gravity Forms found.', 'good-connect' ) . '</p>';
             return;
         }
-
         ?>
         <div class="goodconnect-gf-selector-row">
             <label for="goodconnect-gf-form-select"><strong><?php esc_html_e( 'Select a Form', 'good-connect' ); ?></strong></label>
             <select id="goodconnect-gf-form-select">
                 <option value=""><?php esc_html_e( '— Choose a form —', 'good-connect' ); ?></option>
                 <?php foreach ( $forms as $form ) : ?>
-                    <option value="<?php echo esc_attr( $form->id ); ?>">
-                        <?php echo esc_html( $form->title ); ?>
-                    </option>
+                    <option value="<?php echo esc_attr( $form->id ); ?>"><?php echo esc_html( $form->title ); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
-
         <div id="goodconnect-gf-mapper-wrap" style="display:none;">
             <div class="goodconnect-card">
                 <h3 class="goodconnect-card-title" id="goodconnect-gf-form-title"></h3>
+
+                <div class="goodconnect-section">
+                    <label class="goodconnect-section-label"><?php esc_html_e( 'GHL Account', 'good-connect' ); ?></label>
+                    <select id="goodconnect-gf-account">
+                        <option value=""><?php esc_html_e( '— Use default account —', 'good-connect' ); ?></option>
+                    </select>
+                </div>
 
                 <div class="goodconnect-mapper" id="goodconnect-gf-mapper">
                     <div class="goodconnect-mapper-header">
                         <span><?php esc_html_e( 'GHL Field', 'good-connect' ); ?></span>
                         <span><?php esc_html_e( 'Gravity Forms Field', 'good-connect' ); ?></span>
                     </div>
-                    <!-- Rows injected by JS -->
+                </div>
+
+                <div class="goodconnect-section" id="goodconnect-gf-custom-fields-wrap">
+                    <label class="goodconnect-section-label"><?php esc_html_e( 'Custom Fields', 'good-connect' ); ?></label>
+                    <p class="description"><?php esc_html_e( 'Map additional GHL custom field keys to form fields.', 'good-connect' ); ?></p>
+                    <div id="goodconnect-gf-custom-fields"></div>
+                    <button type="button" class="button goodconnect-add-custom-field" style="margin-top:8px;">+ <?php esc_html_e( 'Add Custom Field', 'good-connect' ); ?></button>
+                </div>
+
+                <div class="goodconnect-section">
+                    <label class="goodconnect-section-label"><?php esc_html_e( 'Static Tags', 'good-connect' ); ?></label>
+                    <p class="description"><?php esc_html_e( 'These tags are added to every GHL contact from this form. Comma-separated.', 'good-connect' ); ?></p>
+                    <input type="text" id="goodconnect-gf-static-tags" class="regular-text" placeholder="e.g. webinar-lead, Q1-2026" />
+                </div>
+
+                <div class="goodconnect-section">
+                    <label class="goodconnect-section-label"><?php esc_html_e( 'Dynamic Tags', 'good-connect' ); ?></label>
+                    <p class="description"><?php esc_html_e( 'The value of the selected field will be added as a tag on the GHL contact.', 'good-connect' ); ?></p>
+                    <div id="goodconnect-gf-dynamic-tags"></div>
+                    <button type="button" class="button goodconnect-add-dynamic-tag" style="margin-top:8px;">+ <?php esc_html_e( 'Add Dynamic Tag Field', 'good-connect' ); ?></button>
                 </div>
 
                 <div class="goodconnect-card-footer">
-                    <button type="button" class="button button-primary" id="goodconnect-save-gf">
-                        <?php esc_html_e( 'Save Mapping', 'good-connect' ); ?>
-                    </button>
+                    <button type="button" class="button button-primary" id="goodconnect-save-gf"><?php esc_html_e( 'Save Mapping', 'good-connect' ); ?></button>
                     <span class="goodconnect-save-status"></span>
                 </div>
             </div>
@@ -249,44 +281,49 @@ class GoodConnect_Admin {
 
     private static function render_elementor_tab() {
         $elementor_active = did_action( 'elementor_pro/init' ) || class_exists( '\ElementorPro\Plugin' );
-
         if ( ! $elementor_active ) {
             echo '<div class="notice notice-warning inline"><p>' . esc_html__( 'Elementor Pro is not active.', 'good-connect' ) . '</p></div>';
             return;
         }
-
-        $all_mappings = get_option( 'goodconnect_elementor_mappings', [] );
-        $ghl_fields   = self::ghl_contact_fields();
+        $all_configs = get_option( 'goodconnect_elementor_configs', [] );
+        $ghl_fields  = self::ghl_contact_fields();
         ?>
-        <p class="description">
-            <?php esc_html_e( 'Enter the Elementor form name and map each field ID (as set in the Elementor form widget) to a GHL contact field.', 'good-connect' ); ?>
-        </p>
-
+        <p class="description"><?php esc_html_e( 'Enter the Elementor form name and map each field ID to a GHL contact field.', 'good-connect' ); ?></p>
         <div id="goodconnect-elementor-forms">
-            <?php foreach ( $all_mappings as $form_name => $mapping ) :
-                self::render_elementor_form_card( $form_name, $mapping, $ghl_fields );
+            <?php foreach ( $all_configs as $form_name => $config ) :
+                self::render_elementor_form_card( $form_name, $config, $ghl_fields );
             endforeach; ?>
         </div>
-
-        <button type="button" class="button goodconnect-add-elementor-form" style="margin-top:12px;">
-            + <?php esc_html_e( 'Add Form', 'good-connect' ); ?>
-        </button>
-
+        <button type="button" class="button goodconnect-add-elementor-form" style="margin-top:12px;">+ <?php esc_html_e( 'Add Form', 'good-connect' ); ?></button>
         <template id="goodconnect-elementor-card-template">
-            <?php self::render_elementor_form_card( '', [], $ghl_fields, true ); ?>
+            <?php self::render_elementor_form_card( '', [], $ghl_fields ); ?>
         </template>
         <?php
     }
 
-    private static function render_elementor_form_card( string $form_name, array $mapping, array $ghl_fields, bool $is_template = false ) {
+    private static function render_elementor_form_card( string $form_name, array $config, array $ghl_fields ) {
+        $field_map   = $config['field_map']   ?? [];
+        $static_tags = implode( ', ', (array) ( $config['static_tags'] ?? [] ) );
+        $account_id  = $config['account_id']  ?? '';
         ?>
         <div class="goodconnect-card goodconnect-elementor-card">
             <div class="goodconnect-card-title-row">
-                <input type="text"
-                       class="goodconnect-elementor-form-name regular-text"
+                <input type="text" class="goodconnect-elementor-form-name regular-text"
                        placeholder="<?php esc_attr_e( 'Form name (must match exactly)', 'good-connect' ); ?>"
                        value="<?php echo esc_attr( $form_name ); ?>" />
                 <button type="button" class="button goodconnect-remove-elementor-form"><?php esc_html_e( 'Remove', 'good-connect' ); ?></button>
+            </div>
+
+            <div class="goodconnect-section">
+                <label class="goodconnect-section-label"><?php esc_html_e( 'GHL Account', 'good-connect' ); ?></label>
+                <select class="goodconnect-elementor-account">
+                    <option value=""><?php esc_html_e( '— Use default account —', 'good-connect' ); ?></option>
+                    <?php foreach ( GoodConnect_Settings::get_accounts() as $account ) : ?>
+                        <option value="<?php echo esc_attr( $account['id'] ); ?>" <?php selected( $account_id, $account['id'] ); ?>>
+                            <?php echo esc_html( $account['label'] ); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
 
             <div class="goodconnect-mapper">
@@ -294,24 +331,26 @@ class GoodConnect_Admin {
                     <span><?php esc_html_e( 'GHL Field', 'good-connect' ); ?></span>
                     <span><?php esc_html_e( 'Elementor Field ID', 'good-connect' ); ?></span>
                 </div>
-                <?php foreach ( $ghl_fields as $ghl_key => $ghl_label ) :
-                    $value = $mapping[ $ghl_key ] ?? '';
-                    ?>
+                <?php foreach ( $ghl_fields as $ghl_key => $ghl_label ) : ?>
                     <div class="goodconnect-mapper-row">
                         <label><?php echo esc_html( $ghl_label ); ?></label>
-                        <input type="text"
-                               class="goodconnect-elementor-field-id"
+                        <input type="text" class="goodconnect-elementor-field-id"
                                data-ghl-field="<?php echo esc_attr( $ghl_key ); ?>"
                                placeholder="<?php esc_attr_e( 'e.g. email', 'good-connect' ); ?>"
-                               value="<?php echo esc_attr( $value ); ?>" />
+                               value="<?php echo esc_attr( $field_map[ $ghl_key ] ?? '' ); ?>" />
                     </div>
                 <?php endforeach; ?>
             </div>
 
+            <div class="goodconnect-section">
+                <label class="goodconnect-section-label"><?php esc_html_e( 'Static Tags', 'good-connect' ); ?></label>
+                <input type="text" class="goodconnect-elementor-static-tags regular-text"
+                       placeholder="e.g. webinar-lead, Q1-2026"
+                       value="<?php echo esc_attr( $static_tags ); ?>" />
+            </div>
+
             <div class="goodconnect-card-footer">
-                <button type="button" class="button button-primary goodconnect-save-elementor">
-                    <?php esc_html_e( 'Save Mapping', 'good-connect' ); ?>
-                </button>
+                <button type="button" class="button button-primary goodconnect-save-elementor"><?php esc_html_e( 'Save Mapping', 'good-connect' ); ?></button>
                 <span class="goodconnect-save-status"></span>
             </div>
         </div>
@@ -327,29 +366,37 @@ class GoodConnect_Admin {
             echo '<div class="notice notice-warning inline"><p>' . esc_html__( 'WooCommerce is not active.', 'good-connect' ) . '</p></div>';
             return;
         }
-
-        $enabled = GoodConnect_Settings::get( 'woo_enabled' );
+        $enabled    = GoodConnect_Settings::get( 'woo_enabled' );
+        $account_id = GoodConnect_Settings::get( 'woo_account_id' );
         ?>
         <div class="goodconnect-card">
             <h3 class="goodconnect-card-title"><?php esc_html_e( 'Order → GHL Contact', 'good-connect' ); ?></h3>
-            <p class="description">
-                <?php esc_html_e( 'When enabled, a GHL contact will be created or updated every time a new WooCommerce order is placed. The following fields are sent automatically:', 'good-connect' ); ?>
-            </p>
-            <ul class="goodconnect-field-list">
-                <li><strong>firstName</strong>, <strong>lastName</strong>, <strong>email</strong>, <strong>phone</strong></li>
-                <li><strong>address1</strong>, <strong>city</strong>, <strong>state</strong>, <strong>postalCode</strong>, <strong>country</strong></li>
-                <li><?php esc_html_e( 'Tag:', 'good-connect' ); ?> <code>woocommerce-customer</code></li>
-            </ul>
+            <p class="description"><?php esc_html_e( 'When enabled, a GHL contact will be created or updated every time a new WooCommerce order is placed.', 'good-connect' ); ?></p>
 
             <label class="goodconnect-toggle">
                 <input type="checkbox" id="gc_woo_enabled" <?php checked( $enabled, '1' ); ?> value="1" />
                 <?php esc_html_e( 'Enable WooCommerce → GHL sync', 'good-connect' ); ?>
             </label>
 
+            <div class="goodconnect-section" style="margin-top:16px;">
+                <label class="goodconnect-section-label"><?php esc_html_e( 'GHL Account', 'good-connect' ); ?></label>
+                <select id="gc_woo_account_id">
+                    <option value=""><?php esc_html_e( '— Use default account —', 'good-connect' ); ?></option>
+                    <?php foreach ( GoodConnect_Settings::get_accounts() as $account ) : ?>
+                        <option value="<?php echo esc_attr( $account['id'] ); ?>" <?php selected( $account_id, $account['id'] ); ?>>
+                            <?php echo esc_html( $account['label'] ); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <ul class="goodconnect-field-list">
+                <li><?php esc_html_e( 'Fields sent: firstName, lastName, email, phone, address1, city, state, postalCode, country', 'good-connect' ); ?></li>
+                <li><?php esc_html_e( 'Tag:', 'good-connect' ); ?> <code>woocommerce-customer</code></li>
+            </ul>
+
             <div class="goodconnect-card-footer">
-                <button type="button" class="button button-primary" id="goodconnect-save-woo">
-                    <?php esc_html_e( 'Save', 'good-connect' ); ?>
-                </button>
+                <button type="button" class="button button-primary" id="goodconnect-save-woo"><?php esc_html_e( 'Save', 'good-connect' ); ?></button>
                 <span class="goodconnect-save-status"></span>
             </div>
         </div>
@@ -357,107 +404,169 @@ class GoodConnect_Admin {
     }
 
     // -------------------------------------------------------------------------
+    // Activity Log tab
+    // -------------------------------------------------------------------------
+
+    private static function render_log_tab() {
+        $source  = sanitize_key( $_GET['gc_source'] ?? '' );
+        $success = isset( $_GET['gc_success'] ) ? sanitize_key( $_GET['gc_success'] ) : 'all';
+        ?>
+        <div class="goodconnect-log-filters">
+            <form method="get">
+                <input type="hidden" name="page" value="good-connect" />
+                <input type="hidden" name="tab" value="log" />
+                <select name="gc_source">
+                    <option value=""><?php esc_html_e( 'All Sources', 'good-connect' ); ?></option>
+                    <option value="gravity-forms" <?php selected( $source, 'gravity-forms' ); ?>><?php esc_html_e( 'Gravity Forms', 'good-connect' ); ?></option>
+                    <option value="elementor"     <?php selected( $source, 'elementor' ); ?>><?php esc_html_e( 'Elementor', 'good-connect' ); ?></option>
+                    <option value="woocommerce"   <?php selected( $source, 'woocommerce' ); ?>><?php esc_html_e( 'WooCommerce', 'good-connect' ); ?></option>
+                </select>
+                <select name="gc_success">
+                    <option value="all" <?php selected( $success, 'all' ); ?>><?php esc_html_e( 'All Statuses', 'good-connect' ); ?></option>
+                    <option value="1"   <?php selected( $success, '1' ); ?>><?php esc_html_e( 'Success', 'good-connect' ); ?></option>
+                    <option value="0"   <?php selected( $success, '0' ); ?>><?php esc_html_e( 'Failed', 'good-connect' ); ?></option>
+                </select>
+                <button type="submit" class="button"><?php esc_html_e( 'Filter', 'good-connect' ); ?></button>
+                <button type="button" class="button" id="goodconnect-clear-log" style="float:right;color:#b32d2e;border-color:#b32d2e;"><?php esc_html_e( 'Clear Log', 'good-connect' ); ?></button>
+            </form>
+        </div>
+
+        <?php
+        $table = new GoodConnect_Log_Table();
+        $table->prepare_items();
+        echo '<form method="get">';
+        echo '<input type="hidden" name="page" value="good-connect" />';
+        echo '<input type="hidden" name="tab" value="log" />';
+        $table->display();
+        echo '</form>';
+    }
+
+    // -------------------------------------------------------------------------
     // AJAX handlers
     // -------------------------------------------------------------------------
 
-    public static function ajax_save_gf_mapping() {
+    public static function ajax_save_accounts() {
         check_ajax_referer( 'goodconnect_admin', 'nonce' );
-        if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( 'Unauthorised', 403 );
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
+
+        $raw      = $_POST['accounts'] ?? [];
+        $accounts = [];
+        $has_default = false;
+
+        foreach ( (array) $raw as $row ) {
+            $id = sanitize_text_field( $row['id'] ?? '' );
+            if ( ! $id ) $id = 'account_' . substr( md5( uniqid( '', true ) ), 0, 8 );
+
+            $is_default = ! empty( $row['is_default'] ) && ! $has_default;
+            if ( $is_default ) $has_default = true;
+
+            $accounts[] = [
+                'id'          => $id,
+                'label'       => sanitize_text_field( $row['label']       ?? 'Account' ),
+                'api_key'     => sanitize_text_field( $row['api_key']     ?? '' ),
+                'location_id' => sanitize_text_field( $row['location_id'] ?? '' ),
+                'is_default'  => $is_default,
+            ];
         }
+
+        // Ensure at least one default.
+        if ( $accounts && ! $has_default ) $accounts[0]['is_default'] = true;
+
+        GoodConnect_Settings::save_accounts( $accounts );
+        wp_send_json_success( [ 'accounts' => $accounts ] );
+    }
+
+    public static function ajax_save_gf_config() {
+        check_ajax_referer( 'goodconnect_admin', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
 
         $form_id = absint( $_POST['form_id'] ?? 0 );
-        $mapping = $_POST['mapping'] ?? [];
+        if ( ! $form_id ) wp_send_json_error( 'Invalid form ID' );
 
-        if ( ! $form_id ) {
-            wp_send_json_error( 'Invalid form ID' );
-        }
-
-        // Sanitize: both keys (GHL fields) and values (GF field IDs) are plain strings.
-        $clean = [];
-        foreach ( (array) $mapping as $ghl_field => $gf_field_id ) {
-            $ghl_field  = sanitize_key( $ghl_field );
+        $raw_map = (array) ( $_POST['field_map'] ?? [] );
+        $field_map = [];
+        foreach ( $raw_map as $ghl_field => $gf_field_id ) {
+            $ghl_field  = sanitize_text_field( $ghl_field );
             $gf_field_id = sanitize_text_field( $gf_field_id );
-            if ( $ghl_field && $gf_field_id !== '' ) {
-                $clean[ $ghl_field ] = $gf_field_id;
-            }
+            if ( $ghl_field && $gf_field_id !== '' ) $field_map[ $ghl_field ] = $gf_field_id;
         }
 
-        GoodConnect_GF::save_field_mapping( $form_id, $clean );
+        $raw_custom = (array) ( $_POST['custom_fields'] ?? [] );
+        $custom_fields = [];
+        foreach ( $raw_custom as $row ) {
+            $key      = sanitize_text_field( $row['ghl_key']     ?? '' );
+            $field_id = sanitize_text_field( $row['gf_field_id'] ?? '' );
+            if ( $key && $field_id ) $custom_fields[] = [ 'ghl_key' => $key, 'gf_field_id' => $field_id ];
+        }
+
+        $raw_static = sanitize_text_field( $_POST['static_tags'] ?? '' );
+        $static_tags = array_values( array_filter( array_map( 'trim', explode( ',', $raw_static ) ) ) );
+
+        $raw_dynamic = (array) ( $_POST['dynamic_tags'] ?? [] );
+        $dynamic_tags = [];
+        foreach ( $raw_dynamic as $row ) {
+            $field_id = sanitize_text_field( $row['gf_field_id'] ?? '' );
+            if ( $field_id ) $dynamic_tags[] = [ 'gf_field_id' => $field_id ];
+        }
+
+        $config = [
+            'account_id'    => sanitize_text_field( $_POST['account_id'] ?? '' ),
+            'field_map'     => $field_map,
+            'custom_fields' => $custom_fields,
+            'static_tags'   => $static_tags,
+            'dynamic_tags'  => $dynamic_tags,
+        ];
+
+        GoodConnect_GF::save_form_config( $form_id, $config );
         wp_send_json_success();
     }
 
-    public static function ajax_save_elementor_mapping() {
+    public static function ajax_save_elementor_config() {
         check_ajax_referer( 'goodconnect_admin', 'nonce' );
-        if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( 'Unauthorised', 403 );
-        }
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
 
         $form_name = sanitize_text_field( $_POST['form_name'] ?? '' );
-        $mapping   = $_POST['mapping'] ?? [];
+        if ( ! $form_name ) wp_send_json_error( 'Invalid form name' );
 
-        if ( ! $form_name ) {
-            wp_send_json_error( 'Invalid form name' );
-        }
-
-        $clean = [];
-        foreach ( (array) $mapping as $ghl_field => $elementor_field_id ) {
-            $ghl_field        = sanitize_key( $ghl_field );
+        $raw_map = (array) ( $_POST['field_map'] ?? [] );
+        $field_map = [];
+        foreach ( $raw_map as $ghl_field => $elementor_field_id ) {
+            $ghl_field        = sanitize_text_field( $ghl_field );
             $elementor_field_id = sanitize_text_field( $elementor_field_id );
-            if ( $ghl_field && $elementor_field_id !== '' ) {
-                $clean[ $ghl_field ] = $elementor_field_id;
-            }
+            if ( $ghl_field && $elementor_field_id !== '' ) $field_map[ $ghl_field ] = $elementor_field_id;
         }
 
-        GoodConnect_Elementor::save_field_mapping( $form_name, $clean );
+        $raw_static = sanitize_text_field( $_POST['static_tags'] ?? '' );
+        $static_tags = array_values( array_filter( array_map( 'trim', explode( ',', $raw_static ) ) ) );
+
+        $config = [
+            'account_id'    => sanitize_text_field( $_POST['account_id'] ?? '' ),
+            'field_map'     => $field_map,
+            'custom_fields' => [],
+            'static_tags'   => $static_tags,
+            'dynamic_tags'  => [],
+        ];
+
+        GoodConnect_Elementor::save_form_config( $form_name, $config );
         wp_send_json_success();
     }
 
     public static function ajax_save_woo_settings() {
         check_ajax_referer( 'goodconnect_admin', 'nonce' );
-        if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( 'Unauthorised', 403 );
-        }
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
 
-        $enabled = ! empty( $_POST['woo_enabled'] ) ? '1' : '0';
-
-        $options                = get_option( GoodConnect_Settings::OPTION_KEY, [] );
-        $options['woo_enabled'] = $enabled;
+        $options                 = get_option( GoodConnect_Settings::OPTION_KEY, [] );
+        $options['woo_enabled']  = ! empty( $_POST['woo_enabled'] ) ? '1' : '0';
+        $options['woo_account_id'] = sanitize_text_field( $_POST['woo_account_id'] ?? '' );
         update_option( GoodConnect_Settings::OPTION_KEY, $options );
-
         wp_send_json_success();
     }
 
-    public static function ajax_get_gf_form() {
+    public static function ajax_clear_log() {
         check_ajax_referer( 'goodconnect_admin', 'nonce' );
-        if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( 'Unauthorised', 403 );
-        }
-
-        if ( ! class_exists( 'GFAPI' ) ) {
-            wp_send_json_error( 'Gravity Forms not active' );
-        }
-
-        $form_id  = absint( $_POST['form_id'] ?? 0 );
-        $form_obj = GFAPI::get_form( $form_id );
-
-        if ( ! $form_obj ) {
-            wp_send_json_error( 'Form not found' );
-        }
-
-        $fields = [];
-        foreach ( $form_obj['fields'] as $field ) {
-            $fields[] = [
-                'id'    => (string) $field->id,
-                'label' => $field->label ?: sprintf( 'Field %s', $field->id ),
-            ];
-        }
-
-        wp_send_json_success( [
-            'title'   => $form_obj['title'],
-            'fields'  => $fields,
-            'mapping' => GoodConnect_GF::get_field_mapping( $form_id ),
-        ] );
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
+        GoodConnect_DB::clear_log();
+        wp_send_json_success();
     }
 
     // -------------------------------------------------------------------------
@@ -466,18 +575,18 @@ class GoodConnect_Admin {
 
     public static function ghl_contact_fields(): array {
         return [
-            'firstName'  => __( 'First Name', 'good-connect' ),
-            'lastName'   => __( 'Last Name', 'good-connect' ),
-            'email'      => __( 'Email', 'good-connect' ),
-            'phone'      => __( 'Phone', 'good-connect' ),
-            'address1'   => __( 'Address', 'good-connect' ),
-            'city'       => __( 'City', 'good-connect' ),
-            'state'      => __( 'State', 'good-connect' ),
-            'postalCode' => __( 'Postal Code', 'good-connect' ),
-            'country'    => __( 'Country', 'good-connect' ),
-            'companyName'=> __( 'Company Name', 'good-connect' ),
-            'website'    => __( 'Website', 'good-connect' ),
-            'source'     => __( 'Source', 'good-connect' ),
+            'firstName'   => __( 'First Name', 'good-connect' ),
+            'lastName'    => __( 'Last Name', 'good-connect' ),
+            'email'       => __( 'Email', 'good-connect' ),
+            'phone'       => __( 'Phone', 'good-connect' ),
+            'address1'    => __( 'Address', 'good-connect' ),
+            'city'        => __( 'City', 'good-connect' ),
+            'state'       => __( 'State', 'good-connect' ),
+            'postalCode'  => __( 'Postal Code', 'good-connect' ),
+            'country'     => __( 'Country', 'good-connect' ),
+            'companyName' => __( 'Company Name', 'good-connect' ),
+            'website'     => __( 'Website', 'good-connect' ),
+            'source'      => __( 'Source', 'good-connect' ),
         ];
     }
 }
