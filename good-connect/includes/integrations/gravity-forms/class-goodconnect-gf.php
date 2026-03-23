@@ -9,8 +9,24 @@ class GoodConnect_GF {
     }
 
     public static function handle_submission( $entry, $form ) {
-        $config = self::get_form_config( (int) $form['id'] );
+        $form_id = (int) $form['id'];
+        $config  = self::get_form_config( $form_id );
         if ( empty( $config['field_map'] ) && empty( $config['custom_fields'] ) ) return;
+
+        // Conditions check.
+        if ( ! GoodConnect_Conditions::passes(
+            $config['conditions'] ?? [],
+            fn( $id ) => rgar( $entry, (string) $id )
+        ) ) {
+            GoodConnect_DB::log( [
+                'source'   => 'gravity-forms',
+                'form_id'  => (string) $form_id,
+                'form_name'=> $form['title'] ?? '',
+                'action'   => 'skipped_conditions',
+                'success'  => 1,
+            ] );
+            return;
+        }
 
         // Resolve account.
         $account = ! empty( $config['account_id'] )
@@ -61,7 +77,7 @@ class GoodConnect_GF {
         $success = ! is_wp_error( $result );
         GoodConnect_DB::log( [
             'source'         => 'gravity-forms',
-            'form_id'        => (string) $form['id'],
+            'form_id'        => (string) $form_id,
             'form_name'      => $form['title'] ?? '',
             'account_id'     => $account['id'] ?? '',
             'contact_email'  => $contact['email'] ?? '',
@@ -71,9 +87,45 @@ class GoodConnect_GF {
             'error_message'  => $success ? '' : $result->get_error_message(),
         ] );
 
-        if ( ! $success ) {
-            error_log( '[GoodConnect] GF submission error (form ' . $form['id'] . '): ' . $result->get_error_message() );
+        // Opportunity.
+        $opp = $config['opportunity'] ?? [];
+        if ( $success && ! empty( $opp['enabled'] ) && ! empty( $result['contact']['id'] ) ) {
+            $contact_id     = $result['contact']['id'];
+            $resolved_title = self::resolve_merge_tags( $opp['title'] ?? '', $entry );
+            $opp_value      = ! empty( $opp['value_type'] ) && $opp['value_type'] === 'field'
+                ? rgar( $entry, (string) ( $opp['value'] ?? '' ) )
+                : ( $opp['value'] ?? 0 );
+
+            $opp_result = $client->create_opportunity( [
+                'pipelineId'      => $opp['pipeline_id'] ?? '',
+                'pipelineStageId' => $opp['stage_id']    ?? '',
+                'name'            => $resolved_title ?: ( $form['title'] ?? '' ),
+                'monetaryValue'   => is_numeric( $opp_value ) ? (float) $opp_value : 0,
+                'contactId'       => $contact_id,
+            ] );
+
+            GoodConnect_DB::log( [
+                'source'         => 'gravity-forms',
+                'form_id'        => (string) $form_id,
+                'form_name'      => $form['title'] ?? '',
+                'account_id'     => $account['id'] ?? '',
+                'contact_email'  => $contact['email'] ?? '',
+                'action'         => 'create_opportunity',
+                'success'        => ! is_wp_error( $opp_result ),
+                'ghl_contact_id' => $contact_id,
+                'error_message'  => is_wp_error( $opp_result ) ? $opp_result->get_error_message() : '',
+            ] );
         }
+
+        if ( ! $success ) {
+            error_log( '[GoodConnect] GF submission error (form ' . $form_id . '): ' . $result->get_error_message() );
+        }
+    }
+
+    private static function resolve_merge_tags( string $template, $entry ): string {
+        return preg_replace_callback( '/\{(\d+(?:\.\d+)?)\}/', function ( $m ) use ( $entry ) {
+            return rgar( $entry, $m[1] ) ?: '';
+        }, $template );
     }
 
     public static function get_form_config( int $form_id ): array {
@@ -84,12 +136,14 @@ class GoodConnect_GF {
             'custom_fields' => [],
             'static_tags'   => [],
             'dynamic_tags'  => [],
+            'conditions'    => [ 'enabled' => false, 'operator' => 'AND', 'rules' => [] ],
+            'opportunity'   => [ 'enabled' => false, 'pipeline_id' => '', 'stage_id' => '', 'title' => '', 'value_type' => 'static', 'value' => '' ],
         ];
     }
 
     public static function save_form_config( int $form_id, array $config ): void {
-        $all               = get_option( 'goodconnect_gf_configs', [] );
-        $all[ $form_id ]   = $config;
+        $all             = get_option( 'goodconnect_gf_configs', [] );
+        $all[ $form_id ] = $config;
         update_option( 'goodconnect_gf_configs', $all );
     }
 }

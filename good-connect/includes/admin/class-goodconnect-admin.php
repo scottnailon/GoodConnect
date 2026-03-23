@@ -10,6 +10,10 @@ class GoodConnect_Admin {
         add_action( 'wp_ajax_goodconnect_save_gf_config',        [ __CLASS__, 'ajax_save_gf_config' ] );
         add_action( 'wp_ajax_goodconnect_save_elementor_config', [ __CLASS__, 'ajax_save_elementor_config' ] );
         add_action( 'wp_ajax_goodconnect_save_woo_settings',     [ __CLASS__, 'ajax_save_woo_settings' ] );
+        add_action( 'wp_ajax_goodconnect_save_cf7_config',       [ __CLASS__, 'ajax_save_cf7_config' ] );
+        add_action( 'wp_ajax_goodconnect_bulk_sync_start',       [ __CLASS__, 'ajax_bulk_sync_start' ] );
+        add_action( 'wp_ajax_goodconnect_bulk_sync_cancel',      [ __CLASS__, 'ajax_bulk_sync_cancel' ] );
+        add_action( 'wp_ajax_goodconnect_bulk_sync_progress',    [ __CLASS__, 'ajax_bulk_sync_progress' ] );
         add_action( 'wp_ajax_goodconnect_clear_log',             [ __CLASS__, 'ajax_clear_log' ] );
     }
 
@@ -99,6 +103,9 @@ class GoodConnect_Admin {
             'gravity-forms' => __( 'Gravity Forms', 'good-connect' ),
             'elementor'     => __( 'Elementor', 'good-connect' ),
             'woocommerce'   => __( 'WooCommerce', 'good-connect' ),
+            'contact-form-7'=> __( 'Contact Form 7', 'good-connect' ),
+            'bulk-sync'     => __( 'Bulk Sync', 'good-connect' ),
+            'webhooks'      => __( 'Webhooks', 'good-connect' ),
             'log'           => __( 'Activity Log', 'good-connect' ),
         ];
         ?>
@@ -119,11 +126,14 @@ class GoodConnect_Admin {
             <div class="goodconnect-tab-content">
                 <?php
                 switch ( $active_tab ) {
-                    case 'gravity-forms': self::render_gf_tab();       break;
-                    case 'elementor':     self::render_elementor_tab(); break;
-                    case 'woocommerce':   self::render_woo_tab();       break;
-                    case 'log':           self::render_log_tab();       break;
-                    default:              self::render_settings_tab();
+                    case 'gravity-forms':  self::render_gf_tab();        break;
+                    case 'elementor':      self::render_elementor_tab();  break;
+                    case 'woocommerce':    self::render_woo_tab();        break;
+                    case 'contact-form-7': self::render_cf7_tab();        break;
+                    case 'bulk-sync':      self::render_bulk_sync_tab();  break;
+                    case 'webhooks':       GoodConnect_Webhook_Admin::render_webhooks_tab(); break;
+                    case 'log':            self::render_log_tab();        break;
+                    default:               self::render_settings_tab();
                 }
                 ?>
             </div>
@@ -404,6 +414,153 @@ class GoodConnect_Admin {
     }
 
     // -------------------------------------------------------------------------
+    // Contact Form 7 tab
+    // -------------------------------------------------------------------------
+
+    private static function render_cf7_tab() {
+        if ( ! class_exists( 'WPCF7' ) ) {
+            echo '<div class="notice notice-warning inline"><p>' . esc_html__( 'Contact Form 7 is not active.', 'good-connect' ) . '</p></div>';
+            return;
+        }
+
+        $forms = get_posts( [
+            'post_type'      => 'wpcf7_contact_form',
+            'posts_per_page' => -1,
+            'orderby'        => 'title',
+            'order'          => 'ASC',
+        ] );
+
+        if ( empty( $forms ) ) {
+            echo '<p>' . esc_html__( 'No Contact Form 7 forms found.', 'good-connect' ) . '</p>';
+            return;
+        }
+
+        $ghl_fields = self::ghl_contact_fields();
+        ?>
+        <p class="description"><?php esc_html_e( 'Map Contact Form 7 field names to GHL contact fields. Use the field name set in the CF7 form tag (e.g. your-email).', 'good-connect' ); ?></p>
+
+        <?php foreach ( $forms as $form ) :
+            $form_id = $form->ID;
+            $config  = GoodConnect_CF7::get_form_config( $form_id );
+            $field_map   = $config['field_map']   ?? [];
+            $static_tags = implode( ', ', (array) ( $config['static_tags'] ?? [] ) );
+            $account_id  = $config['account_id']  ?? '';
+        ?>
+        <div class="goodconnect-card goodconnect-cf7-card" data-form-id="<?php echo esc_attr( $form_id ); ?>">
+            <div class="goodconnect-card-title">
+                <?php echo esc_html( $form->post_title ); ?>
+                <span class="goodconnect-form-id">(ID: <?php echo esc_html( $form_id ); ?>)</span>
+            </div>
+
+            <div class="goodconnect-section">
+                <label class="goodconnect-section-label"><?php esc_html_e( 'GHL Account', 'good-connect' ); ?></label>
+                <select class="goodconnect-cf7-account">
+                    <option value=""><?php esc_html_e( '— Use default account —', 'good-connect' ); ?></option>
+                    <?php foreach ( GoodConnect_Settings::get_accounts() as $account ) : ?>
+                        <option value="<?php echo esc_attr( $account['id'] ); ?>" <?php selected( $account_id, $account['id'] ); ?>>
+                            <?php echo esc_html( $account['label'] ); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="goodconnect-mapper">
+                <div class="goodconnect-mapper-header">
+                    <span><?php esc_html_e( 'GHL Field', 'good-connect' ); ?></span>
+                    <span><?php esc_html_e( 'CF7 Field Name', 'good-connect' ); ?></span>
+                </div>
+                <?php foreach ( $ghl_fields as $ghl_key => $ghl_label ) : ?>
+                    <div class="goodconnect-mapper-row">
+                        <label><?php echo esc_html( $ghl_label ); ?></label>
+                        <input type="text" class="goodconnect-cf7-field-id"
+                               data-ghl-field="<?php echo esc_attr( $ghl_key ); ?>"
+                               placeholder="<?php esc_attr_e( 'e.g. your-email', 'good-connect' ); ?>"
+                               value="<?php echo esc_attr( $field_map[ $ghl_key ] ?? '' ); ?>" />
+                    </div>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="goodconnect-section">
+                <label class="goodconnect-section-label"><?php esc_html_e( 'Static Tags', 'good-connect' ); ?></label>
+                <input type="text" class="goodconnect-cf7-static-tags regular-text"
+                       placeholder="e.g. webinar-lead, Q1-2026"
+                       value="<?php echo esc_attr( $static_tags ); ?>" />
+            </div>
+
+            <div class="goodconnect-card-footer">
+                <button type="button" class="button button-primary goodconnect-save-cf7"><?php esc_html_e( 'Save Mapping', 'good-connect' ); ?></button>
+                <span class="goodconnect-save-status"></span>
+            </div>
+        </div>
+        <?php endforeach; ?>
+        <?php
+    }
+
+    // -------------------------------------------------------------------------
+    // Bulk Sync tab
+    // -------------------------------------------------------------------------
+
+    private static function render_bulk_sync_tab() {
+        $progress = GoodConnect_BulkSync::get_progress();
+        $last_run = get_option( GoodConnect_BulkSync::LOG_KEY, [] );
+        ?>
+        <div class="goodconnect-card">
+            <h3 class="goodconnect-card-title"><?php esc_html_e( 'Bulk Sync WordPress Users → GHL', 'good-connect' ); ?></h3>
+            <p class="description"><?php esc_html_e( 'Sync all WordPress users to GHL as contacts. Runs in batches of 20 via WP-Cron.', 'good-connect' ); ?></p>
+
+            <div class="goodconnect-section">
+                <label class="goodconnect-section-label"><?php esc_html_e( 'GHL Account', 'good-connect' ); ?></label>
+                <select id="gc-bulk-sync-account">
+                    <option value=""><?php esc_html_e( '— Use default account —', 'good-connect' ); ?></option>
+                    <?php foreach ( GoodConnect_Settings::get_accounts() as $account ) : ?>
+                        <option value="<?php echo esc_attr( $account['id'] ); ?>"><?php echo esc_html( $account['label'] ); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div id="gc-bulk-sync-progress-wrap" style="<?php echo $progress ? '' : 'display:none'; ?>">
+                <div style="margin:12px 0;">
+                    <strong><?php esc_html_e( 'Status:', 'good-connect' ); ?></strong>
+                    <span id="gc-bulk-sync-status"><?php echo esc_html( $progress['status'] ?? '' ); ?></span>
+                    &nbsp;|&nbsp;
+                    <strong><?php esc_html_e( 'Processed:', 'good-connect' ); ?></strong>
+                    <span id="gc-bulk-sync-processed"><?php echo (int) ( $progress['processed'] ?? 0 ); ?></span>
+                    /
+                    <span id="gc-bulk-sync-total"><?php echo (int) ( $progress['total'] ?? 0 ); ?></span>
+                    &nbsp;|&nbsp;
+                    <strong><?php esc_html_e( 'Errors:', 'good-connect' ); ?></strong>
+                    <span id="gc-bulk-sync-errors"><?php echo (int) ( $progress['errors'] ?? 0 ); ?></span>
+                </div>
+            </div>
+
+            <?php if ( ! empty( $last_run ) ) : ?>
+                <p class="description">
+                    <?php
+                    printf(
+                        esc_html__( 'Last run completed %s — %d synced, %d errors.', 'good-connect' ),
+                        esc_html( $last_run['completed_at'] ?? '' ),
+                        (int) ( $last_run['processed'] ?? 0 ),
+                        (int) ( $last_run['errors'] ?? 0 )
+                    );
+                    ?>
+                </p>
+            <?php endif; ?>
+
+            <div class="goodconnect-card-footer" style="margin-top:16px;">
+                <button type="button" class="button button-primary" id="gc-bulk-sync-start"
+                    <?php echo ( $progress && $progress['status'] === 'running' ) ? 'disabled' : ''; ?>>
+                    <?php esc_html_e( 'Start Bulk Sync', 'good-connect' ); ?>
+                </button>
+                <button type="button" class="button" id="gc-bulk-sync-cancel" style="<?php echo ( $progress && $progress['status'] === 'running' ) ? '' : 'display:none'; ?>">
+                    <?php esc_html_e( 'Cancel', 'good-connect' ); ?>
+                </button>
+                <span class="goodconnect-save-status" id="gc-bulk-sync-msg"></span>
+            </div>
+        </div>
+        <?php
+    }
+
+    // -------------------------------------------------------------------------
     // Activity Log tab
     // -------------------------------------------------------------------------
 
@@ -417,9 +574,12 @@ class GoodConnect_Admin {
                 <input type="hidden" name="tab" value="log" />
                 <select name="gc_source">
                     <option value=""><?php esc_html_e( 'All Sources', 'good-connect' ); ?></option>
-                    <option value="gravity-forms" <?php selected( $source, 'gravity-forms' ); ?>><?php esc_html_e( 'Gravity Forms', 'good-connect' ); ?></option>
-                    <option value="elementor"     <?php selected( $source, 'elementor' ); ?>><?php esc_html_e( 'Elementor', 'good-connect' ); ?></option>
-                    <option value="woocommerce"   <?php selected( $source, 'woocommerce' ); ?>><?php esc_html_e( 'WooCommerce', 'good-connect' ); ?></option>
+                    <option value="gravity-forms"   <?php selected( $source, 'gravity-forms' ); ?>><?php esc_html_e( 'Gravity Forms', 'good-connect' ); ?></option>
+                    <option value="elementor"      <?php selected( $source, 'elementor' ); ?>><?php esc_html_e( 'Elementor', 'good-connect' ); ?></option>
+                    <option value="woocommerce"    <?php selected( $source, 'woocommerce' ); ?>><?php esc_html_e( 'WooCommerce', 'good-connect' ); ?></option>
+                    <option value="contact-form-7" <?php selected( $source, 'contact-form-7' ); ?>><?php esc_html_e( 'Contact Form 7', 'good-connect' ); ?></option>
+                    <option value="webhook"        <?php selected( $source, 'webhook' ); ?>><?php esc_html_e( 'Webhook', 'good-connect' ); ?></option>
+                    <option value="bulk-sync"      <?php selected( $source, 'bulk-sync' ); ?>><?php esc_html_e( 'Bulk Sync', 'good-connect' ); ?></option>
                 </select>
                 <select name="gc_success">
                     <option value="all" <?php selected( $success, 'all' ); ?>><?php esc_html_e( 'All Statuses', 'good-connect' ); ?></option>
@@ -567,6 +727,62 @@ class GoodConnect_Admin {
         if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
         GoodConnect_DB::clear_log();
         wp_send_json_success();
+    }
+
+    public static function ajax_save_cf7_config() {
+        check_ajax_referer( 'goodconnect_admin', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
+
+        $form_id = absint( $_POST['form_id'] ?? 0 );
+        if ( ! $form_id ) wp_send_json_error( 'Invalid form ID' );
+
+        $raw_map = (array) ( $_POST['field_map'] ?? [] );
+        $field_map = [];
+        foreach ( $raw_map as $ghl_field => $cf7_field ) {
+            $ghl_field = sanitize_text_field( $ghl_field );
+            $cf7_field = sanitize_text_field( $cf7_field );
+            if ( $ghl_field && $cf7_field !== '' ) $field_map[ $ghl_field ] = $cf7_field;
+        }
+
+        $raw_static  = sanitize_text_field( $_POST['static_tags'] ?? '' );
+        $static_tags = array_values( array_filter( array_map( 'trim', explode( ',', $raw_static ) ) ) );
+
+        $config = [
+            'account_id'    => sanitize_text_field( $_POST['account_id'] ?? '' ),
+            'field_map'     => $field_map,
+            'custom_fields' => [],
+            'static_tags'   => $static_tags,
+            'dynamic_tags'  => [],
+            'conditions'    => [ 'enabled' => false, 'operator' => 'AND', 'rules' => [] ],
+        ];
+
+        GoodConnect_CF7::save_form_config( $form_id, $config );
+        wp_send_json_success();
+    }
+
+    public static function ajax_bulk_sync_start() {
+        check_ajax_referer( 'goodconnect_admin', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
+        $account_id = sanitize_text_field( $_POST['account_id'] ?? '' );
+        $started    = GoodConnect_BulkSync::start( $account_id );
+        if ( $started ) {
+            wp_send_json_success( GoodConnect_BulkSync::get_progress() );
+        } else {
+            wp_send_json_error( 'Sync already running or no users found.' );
+        }
+    }
+
+    public static function ajax_bulk_sync_cancel() {
+        check_ajax_referer( 'goodconnect_admin', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
+        GoodConnect_BulkSync::cancel();
+        wp_send_json_success();
+    }
+
+    public static function ajax_bulk_sync_progress() {
+        check_ajax_referer( 'goodconnect_admin', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
+        wp_send_json_success( GoodConnect_BulkSync::get_progress() );
     }
 
     // -------------------------------------------------------------------------

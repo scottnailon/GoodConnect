@@ -32,6 +32,19 @@ class GoodConnect_GHL_Client {
         return $this->request( 'POST', '/opportunities/', $data );
     }
 
+    /**
+     * Get a contact by ID from GHL.
+     *
+     * @param string $contact_id
+     * @return array|WP_Error
+     */
+    public function get_contact( string $contact_id ) {
+        if ( empty( $contact_id ) ) {
+            return new WP_Error( 'goodconnect_invalid_contact_id', __( 'Contact ID is required.', 'good-connect' ) );
+        }
+        return $this->request( 'GET', '/contacts/' . rawurlencode( $contact_id ) );
+    }
+
     public function trigger_webhook( string $webhook_url, array $data ) {
         $parsed        = wp_parse_url( $webhook_url );
         $allowed_hosts = [ 'services.leadconnectorhq.com', 'backend.leadconnectorhq.com', 'hooks.zapier.com' ];

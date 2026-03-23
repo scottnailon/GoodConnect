@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 class GoodConnect_DB {
 
     const TABLE_ACTIVITY_LOG = 'goodconnect_activity_log';
-    const DB_VERSION = '1.1.0';
+    const DB_VERSION = '1.2.0';
 
     public static function install() {
         global $wpdb;

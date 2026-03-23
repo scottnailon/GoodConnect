@@ -281,6 +281,104 @@
     } );
 
     // =========================================================================
+    // CONTACT FORM 7
+    // =========================================================================
+
+    $( document ).on( 'click', '.goodconnect-save-cf7', function () {
+        var $btn     = $( this );
+        var $card    = $btn.closest( '.goodconnect-cf7-card' );
+        var form_id  = $card.data( 'form-id' );
+        var field_map = {};
+
+        $card.find( '.goodconnect-cf7-field-id' ).each( function () {
+            var ghlField = $( this ).data( 'ghl-field' );
+            var val      = $( this ).val().trim();
+            if ( val ) field_map[ ghlField ] = val;
+        } );
+
+        setBusy( $btn, true, 'Save Mapping' );
+        $.post( GoodConnect.ajaxurl, {
+            action:      'goodconnect_save_cf7_config',
+            nonce:       GoodConnect.nonce,
+            form_id:     form_id,
+            account_id:  $card.find( '.goodconnect-cf7-account' ).val(),
+            field_map:   field_map,
+            static_tags: $card.find( '.goodconnect-cf7-static-tags' ).val(),
+        } )
+        .done( function ( res ) { showStatus( $btn, ! res.success ); } )
+        .fail( function () { showStatus( $btn, true ); } )
+        .always( function () { setBusy( $btn, false, 'Save Mapping' ); } );
+    } );
+
+    // =========================================================================
+    // BULK SYNC
+    // =========================================================================
+
+    var bulkSyncPollTimer = null;
+
+    function updateBulkSyncUI( progress ) {
+        if ( ! progress ) return;
+        $( '#gc-bulk-sync-status' ).text( progress.status );
+        $( '#gc-bulk-sync-processed' ).text( progress.processed );
+        $( '#gc-bulk-sync-total' ).text( progress.total );
+        $( '#gc-bulk-sync-errors' ).text( progress.errors );
+        $( '#gc-bulk-sync-progress-wrap' ).show();
+
+        if ( progress.status === 'running' ) {
+            $( '#gc-bulk-sync-start' ).prop( 'disabled', true );
+            $( '#gc-bulk-sync-cancel' ).show();
+        } else {
+            $( '#gc-bulk-sync-start' ).prop( 'disabled', false );
+            $( '#gc-bulk-sync-cancel' ).hide();
+            if ( bulkSyncPollTimer ) { clearInterval( bulkSyncPollTimer ); bulkSyncPollTimer = null; }
+        }
+    }
+
+    function pollBulkSync() {
+        $.post( GoodConnect.ajaxurl, { action: 'goodconnect_bulk_sync_progress', nonce: GoodConnect.nonce } )
+        .done( function ( res ) {
+            if ( res.success ) updateBulkSyncUI( res.data );
+        } );
+    }
+
+    $( '#gc-bulk-sync-start' ).on( 'click', function () {
+        var $btn = $( this );
+        $btn.prop( 'disabled', true );
+        $.post( GoodConnect.ajaxurl, {
+            action:     'goodconnect_bulk_sync_start',
+            nonce:      GoodConnect.nonce,
+            account_id: $( '#gc-bulk-sync-account' ).val(),
+        } )
+        .done( function ( res ) {
+            if ( res.success ) {
+                updateBulkSyncUI( res.data );
+                bulkSyncPollTimer = setInterval( pollBulkSync, 5000 );
+                $( '#gc-bulk-sync-msg' ).text( 'Sync started!' ).addClass( 'visible' );
+                setTimeout( function () { $( '#gc-bulk-sync-msg' ).removeClass( 'visible' ); }, 3000 );
+            } else {
+                $btn.prop( 'disabled', false );
+                alert( res.data || 'Could not start sync.' );
+            }
+        } )
+        .fail( function () { $btn.prop( 'disabled', false ); } );
+    } );
+
+    $( '#gc-bulk-sync-cancel' ).on( 'click', function () {
+        $.post( GoodConnect.ajaxurl, { action: 'goodconnect_bulk_sync_cancel', nonce: GoodConnect.nonce } )
+        .done( function () {
+            if ( bulkSyncPollTimer ) { clearInterval( bulkSyncPollTimer ); bulkSyncPollTimer = null; }
+            $( '#gc-bulk-sync-status' ).text( 'cancelled' );
+            $( '#gc-bulk-sync-start' ).prop( 'disabled', false );
+            $( this ).hide();
+        }.bind( this ) );
+    } );
+
+    // Auto-poll if a sync is already running on page load.
+    if ( $( '#gc-bulk-sync-progress-wrap' ).is( ':visible' ) && $( '#gc-bulk-sync-status' ).text() === 'running' ) {
+        bulkSyncPollTimer = setInterval( pollBulkSync, 5000 );
+    }
+
+    // =========================================================================
     // WOOCOMMERCE
     // =========================================================================
 
