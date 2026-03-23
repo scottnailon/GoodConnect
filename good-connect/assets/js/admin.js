@@ -576,3 +576,97 @@
     } );
 
 } )( jQuery );
+
+// ---- Webhook tab ----
+if ( document.getElementById( 'gc-webhook-url' ) ) {
+    jQuery( function( $ ) {
+        // Copy webhook URL
+        $( document ).on( 'click', '#gc-webhook-url-copy', function() {
+            var val = $( '#gc-webhook-url' ).val();
+            if ( navigator.clipboard ) {
+                navigator.clipboard.writeText( val );
+            } else {
+                var tmp = $( '<input>' ).val( val ).appendTo( 'body' ).select();
+                document.execCommand( 'copy' );
+                tmp.remove();
+            }
+        } );
+
+        // Add rule.
+        $( document ).on( 'click', '.goodconnect-add-webhook-rule', function() {
+            var tpl = document.getElementById( 'goodconnect-webhook-rule-template' );
+            var idx = Date.now();
+            var html = tpl.innerHTML.replace( /__IDX__/g, idx );
+            $( '#goodconnect-webhook-rules' ).append( html );
+        } );
+
+        // Remove rule.
+        $( document ).on( 'click', '.goodconnect-remove-webhook-rule', function() {
+            $( this ).closest( '.goodconnect-webhook-rule-row' ).remove();
+        } );
+
+        // Save rules.
+        $( document ).on( 'click', '.goodconnect-save-webhook-rules', function() {
+            var $btn  = $( this );
+            var rules = [];
+            $( '.goodconnect-webhook-rule-row' ).each( function() {
+                rules.push( {
+                    event_type:   $( this ).find( '.gc-rule-event' ).val(),
+                    action_type:  $( this ).find( '.gc-rule-action' ).val(),
+                    extra_config: $( this ).find( '.gc-rule-extra' ).val(),
+                } );
+            } );
+            $btn.prop( 'disabled', true ).text( GoodConnect.strings.saving );
+            $.post( GoodConnect.ajaxurl, {
+                action: 'goodconnect_save_webhook_rules',
+                nonce:  GoodConnect.nonce,
+                rules:  rules,
+            } ).done( function( res ) {
+                var $status = $btn.siblings( '.goodconnect-save-status' );
+                $status.text( res.success ? GoodConnect.strings.saved : GoodConnect.strings.error ).addClass( 'visible' );
+                setTimeout( function() { $status.removeClass( 'visible' ); }, 2500 );
+            } ).always( function() { $btn.prop( 'disabled', false ).text( 'Save Rules' ); } );
+        } );
+
+        // Save allowed roles.
+        $( document ).on( 'click', '.goodconnect-save-allowed-roles', function() {
+            var $btn  = $( this );
+            var roles = $( 'input[name="gc_allowed_roles[]"]:checked' ).map( function() { return $( this ).val(); } ).get();
+            $btn.prop( 'disabled', true ).text( GoodConnect.strings.saving );
+            $.post( GoodConnect.ajaxurl, {
+                action: 'goodconnect_save_protection_settings',
+                nonce:  GoodConnect.nonce,
+                allowed_roles: roles,
+            } ).done( function( res ) {
+                var $status = $btn.siblings( '.goodconnect-save-status' );
+                $status.text( res.success ? GoodConnect.strings.saved : GoodConnect.strings.error ).addClass( 'visible' );
+                setTimeout( function() { $status.removeClass( 'visible' ); }, 2500 );
+            } ).always( function() { $btn.prop( 'disabled', false ).text( 'Save' ); } );
+        } );
+
+        // Regenerate secret.
+        $( document ).on( 'click', '.goodconnect-regenerate-secret', function() {
+            if ( ! confirm( 'Regenerate the webhook secret? The old URL will stop working immediately.' ) ) { return; }
+            var $btn = $( this );
+            $btn.prop( 'disabled', true );
+            $.post( GoodConnect.ajaxurl, {
+                action: 'goodconnect_regenerate_webhook_secret',
+                nonce:  GoodConnect.nonce,
+            } ).done( function( res ) {
+                if ( res.success ) { $( '#gc-webhook-url' ).val( res.data.url ); }
+            } ).always( function() { $btn.prop( 'disabled', false ); } );
+        } );
+    } );
+}
+
+// ---- Content protection meta box ----
+if ( document.getElementById( 'gc-denied-action' ) ) {
+    jQuery( function( $ ) {
+        function gcToggleDeniedMessage() {
+            var val = $( '#gc-denied-action' ).val();
+            $( '#gc-denied-message-row' ).toggle( val === 'message' );
+        }
+        gcToggleDeniedMessage();
+        $( '#gc-denied-action' ).on( 'change', gcToggleDeniedMessage );
+    } );
+}

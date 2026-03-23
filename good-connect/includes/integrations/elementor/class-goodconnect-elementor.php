@@ -121,9 +121,7 @@ class GoodConnect_Elementor {
             ] );
         }
 
-        if ( ! $success ) {
-            error_log( '[GoodConnect] Elementor submission error (' . $form_name . '): ' . $result->get_error_message() );
-        }
+        // Errors are captured in the activity log above.
     }
 
     private static function resolve_merge_tags( string $template, array $raw_fields ): string {

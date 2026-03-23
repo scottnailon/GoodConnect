@@ -62,11 +62,15 @@ class GoodConnect_Magic_Link {
     public static function maybe_consume_token(): void {
         if ( ! isset( $_GET[ self::QUERY_VAR ] ) ) return;
 
-        $raw_token = $_GET[ self::QUERY_VAR ];
+        $raw_token = wp_unslash( $_GET[ self::QUERY_VAR ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
         // Validate format: exactly 64 hex chars.
         if ( ! preg_match( '/^[a-f0-9]{64}$/', $raw_token ) ) {
-            wp_die( esc_html__( 'Invalid login link.', 'good-connect' ), 400 );
+            wp_die(
+                esc_html__( 'Invalid login link.', 'good-connect' ),
+                esc_html__( 'Invalid Link', 'good-connect' ),
+                [ 'response' => 400 ]
+            );
         }
 
         $token    = $raw_token;
@@ -83,23 +87,39 @@ class GoodConnect_Magic_Link {
         ] );
 
         if ( empty( $users ) ) {
-            wp_die( esc_html__( 'This login link is invalid or has already been used.', 'good-connect' ), 401 );
+            wp_die(
+                esc_html__( 'This login link is invalid or has already been used.', 'good-connect' ),
+                esc_html__( 'Invalid Link', 'good-connect' ),
+                [ 'response' => 401 ]
+            );
         }
 
         $user_id = $users[0];
         $data    = get_user_meta( $user_id, $meta_key, true );
 
         if ( empty( $data ) || ! is_array( $data ) ) {
-            wp_die( esc_html__( 'This login link is invalid.', 'good-connect' ), 401 );
+            wp_die(
+                esc_html__( 'This login link is invalid.', 'good-connect' ),
+                esc_html__( 'Invalid Link', 'good-connect' ),
+                [ 'response' => 401 ]
+            );
         }
 
         if ( ! empty( $data['used'] ) ) {
-            wp_die( esc_html__( 'This login link has already been used.', 'good-connect' ), 401 );
+            wp_die(
+                esc_html__( 'This login link has already been used.', 'good-connect' ),
+                esc_html__( 'Invalid Link', 'good-connect' ),
+                [ 'response' => 401 ]
+            );
         }
 
         if ( time() > (int) $data['expires'] ) {
             delete_user_meta( $user_id, $meta_key );
-            wp_die( esc_html__( 'This login link has expired.', 'good-connect' ), 401 );
+            wp_die(
+                esc_html__( 'This login link has expired.', 'good-connect' ),
+                esc_html__( 'Expired Link', 'good-connect' ),
+                [ 'response' => 401 ]
+            );
         }
 
         // Mark as used.

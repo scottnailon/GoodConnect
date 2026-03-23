@@ -121,7 +121,13 @@ class GoodConnect_BulkSync {
             $result = $client->upsert_contact( $contact );
             if ( is_wp_error( $result ) ) {
                 $errors++;
-                error_log( '[GoodConnect] Bulk sync error (user ' . $user->ID . '): ' . $result->get_error_message() );
+                GoodConnect_DB::log( [
+                    'source'   => 'bulk-sync',
+                    'form_name' => 'Bulk Sync Batch',
+                    'action'   => 'bulk_sync_error',
+                    'success'  => 0,
+                    'ghl_contact_id' => '',
+                ] );
             }
 
             // Respect GHL rate limits — sleep 100ms between calls.

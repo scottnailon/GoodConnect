@@ -74,8 +74,6 @@ class GoodConnect_Woo {
             'error_message'  => $success ? '' : $result->get_error_message(),
         ] );
 
-        if ( ! $success ) {
-            error_log( '[GoodConnect] WooCommerce error (order ' . $order_id . ', status ' . $to . '): ' . $result->get_error_message() );
-        }
+        // Errors are captured in the activity log above.
     }
 }

@@ -37,7 +37,7 @@ class GoodConnect_Webhook_Admin {
             <div style="display:flex;gap:8px;align-items:center;">
                 <input type="text" id="gc-webhook-url" value="<?php echo esc_attr( $webhook_url ); ?>"
                        class="regular-text" readonly style="flex:1;font-family:monospace;font-size:12px;" />
-                <button type="button" class="button" onclick="navigator.clipboard.writeText(document.getElementById('gc-webhook-url').value)">
+                <button type="button" class="button" id="gc-webhook-url-copy">
                     <?php esc_html_e( 'Copy', 'good-connect' ); ?>
                 </button>
                 <button type="button" class="button goodconnect-regenerate-secret">
@@ -96,68 +96,6 @@ class GoodConnect_Webhook_Admin {
             </div>
         </div>
 
-        <script>
-        jQuery(function($){
-            // Add rule.
-            $(document).on('click', '.goodconnect-add-webhook-rule', function(){
-                var tpl = document.getElementById('goodconnect-webhook-rule-template');
-                var idx = Date.now();
-                var html = tpl.innerHTML.replace(/__IDX__/g, idx);
-                $('#goodconnect-webhook-rules').append(html);
-            });
-            // Remove rule.
-            $(document).on('click', '.goodconnect-remove-webhook-rule', function(){
-                $(this).closest('.goodconnect-webhook-rule-row').remove();
-            });
-            // Save rules.
-            $(document).on('click', '.goodconnect-save-webhook-rules', function(){
-                var $btn = $(this);
-                var rules = [];
-                $('.goodconnect-webhook-rule-row').each(function(){
-                    rules.push({
-                        event_type:   $(this).find('.gc-rule-event').val(),
-                        action_type:  $(this).find('.gc-rule-action').val(),
-                        extra_config: $(this).find('.gc-rule-extra').val(),
-                    });
-                });
-                $btn.prop('disabled', true).text('Saving…');
-                $.post(GoodConnect.ajaxurl, {
-                    action: 'goodconnect_save_webhook_rules',
-                    nonce:  GoodConnect.nonce,
-                    rules:  rules,
-                }).done(function(res){
-                    $btn.siblings('.goodconnect-save-status').text(res.success ? 'Saved!' : 'Error').addClass('visible');
-                    setTimeout(function(){ $btn.siblings('.goodconnect-save-status').removeClass('visible'); }, 2500);
-                }).always(function(){ $btn.prop('disabled', false).text('Save Rules'); });
-            });
-            // Save allowed roles.
-            $(document).on('click', '.goodconnect-save-allowed-roles', function(){
-                var $btn = $(this);
-                var roles = $('input[name="gc_allowed_roles[]"]:checked').map(function(){ return $(this).val(); }).get();
-                $btn.prop('disabled', true).text('Saving…');
-                $.post(GoodConnect.ajaxurl, {
-                    action: 'goodconnect_save_protection_settings',
-                    nonce:  GoodConnect.nonce,
-                    allowed_roles: roles,
-                }).done(function(res){
-                    $btn.siblings('.goodconnect-save-status').text(res.success ? 'Saved!' : 'Error').addClass('visible');
-                    setTimeout(function(){ $btn.siblings('.goodconnect-save-status').removeClass('visible'); }, 2500);
-                }).always(function(){ $btn.prop('disabled', false).text('Save'); });
-            });
-            // Regenerate secret.
-            $(document).on('click', '.goodconnect-regenerate-secret', function(){
-                if (!confirm('Regenerate the webhook secret? The old URL will stop working immediately.')) return;
-                var $btn = $(this);
-                $btn.prop('disabled', true);
-                $.post(GoodConnect.ajaxurl, {
-                    action: 'goodconnect_regenerate_webhook_secret',
-                    nonce:  GoodConnect.nonce,
-                }).done(function(res){
-                    if (res.success) $('#gc-webhook-url').val(res.data.url);
-                }).always(function(){ $btn.prop('disabled', false); });
-            });
-        });
-        </script>
         <?php
     }
 
@@ -205,7 +143,7 @@ class GoodConnect_Webhook_Admin {
         check_ajax_referer( 'goodconnect_admin', 'nonce' );
         if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
 
-        $raw   = (array) ( $_POST['rules'] ?? [] );
+        $raw   = (array) wp_unslash( $_POST['rules'] ?? [] );
         $rules = [];
         foreach ( $raw as $row ) {
             $event  = sanitize_text_field( $row['event_type']  ?? '' );
@@ -236,7 +174,7 @@ class GoodConnect_Webhook_Admin {
 
         // Allowed roles — only permit non-admin roles.
         $forbidden = [ 'administrator', 'editor' ];
-        $raw_roles = (array) ( $_POST['allowed_roles'] ?? [] );
+        $raw_roles = (array) wp_unslash( $_POST['allowed_roles'] ?? [] );
         $clean     = array_values( array_filter( array_map( 'sanitize_key', $raw_roles ), function( $r ) use ( $forbidden ) {
             return ! in_array( $r, $forbidden, true );
         } ) );
@@ -244,7 +182,7 @@ class GoodConnect_Webhook_Admin {
 
         // Denied page.
         if ( isset( $_POST['denied_page_id'] ) ) {
-            update_option( 'goodconnect_protection_denied_page', absint( $_POST['denied_page_id'] ) );
+            update_option( 'goodconnect_protection_denied_page', absint( wp_unslash( $_POST['denied_page_id'] ) ) );
         }
 
         wp_send_json_success();

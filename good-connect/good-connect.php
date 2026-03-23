@@ -1,14 +1,18 @@
 <?php
 /**
- * Plugin Name: GoodConnect
- * Plugin URI:  https://goodhost.com.au
- * Description: GoHighLevel integration for Gravity Forms, Elementor, and WooCommerce.
- * Version:     1.2.1
- * Author:      GoodHost
- * Author URI:  https://goodhost.com.au
- * License:     GPL-2.0+
- * Text Domain: good-connect
- * Domain Path: /languages
+ * Plugin Name:       GoodConnect
+ * Plugin URI:        https://goodhost.com.au
+ * Description:       GoHighLevel integration for WordPress — Gravity Forms, Elementor, Contact Form 7, and WooCommerce.
+ * Version:           1.2.1
+ * Author:            GoodHost
+ * Author URI:        https://goodhost.com.au
+ * License:           GPL-2.0-or-later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain:       good-connect
+ * Domain Path:       /languages
+ * Requires at least: 6.0
+ * Tested up to:      6.7
+ * Requires PHP:      8.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

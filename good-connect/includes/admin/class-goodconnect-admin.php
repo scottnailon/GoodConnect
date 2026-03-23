@@ -96,9 +96,13 @@ class GoodConnect_Admin {
 
     public static function render_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( esc_html__( 'You do not have permission to access this page.', 'good-connect' ) );
+            wp_die(
+                esc_html__( 'You do not have permission to access this page.', 'good-connect' ),
+                esc_html__( 'Access Denied', 'good-connect' ),
+                [ 'response' => 403 ]
+            );
         }
-        $active_tab = sanitize_key( $_GET['tab'] ?? 'settings' );
+        $active_tab = sanitize_key( wp_unslash( $_GET['tab'] ?? 'settings' ) );
         $tabs = [
             'settings'      => __( 'Settings', 'good-connect' ),
             'gravity-forms' => __( 'Gravity Forms', 'good-connect' ),
@@ -619,8 +623,8 @@ class GoodConnect_Admin {
     // -------------------------------------------------------------------------
 
     private static function render_log_tab() {
-        $source  = sanitize_key( $_GET['gc_source'] ?? '' );
-        $success = isset( $_GET['gc_success'] ) ? sanitize_key( $_GET['gc_success'] ) : 'all';
+        $source  = sanitize_key( wp_unslash( $_GET['gc_source'] ?? '' ) );
+        $success = isset( $_GET['gc_success'] ) ? sanitize_key( wp_unslash( $_GET['gc_success'] ) ) : 'all';
         ?>
         <div class="goodconnect-log-filters">
             <form method="get">
@@ -663,7 +667,7 @@ class GoodConnect_Admin {
         check_ajax_referer( 'goodconnect_admin', 'nonce' );
         if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
 
-        $raw      = $_POST['accounts'] ?? [];
+        $raw      = wp_unslash( $_POST['accounts'] ?? [] );
         $accounts = [];
         $has_default = false;
 
@@ -694,10 +698,10 @@ class GoodConnect_Admin {
         check_ajax_referer( 'goodconnect_admin', 'nonce' );
         if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
 
-        $form_id = absint( $_POST['form_id'] ?? 0 );
+        $form_id = absint( wp_unslash( $_POST['form_id'] ?? 0 ) );
         if ( ! $form_id ) wp_send_json_error( 'Invalid form ID' );
 
-        $raw_map = (array) ( $_POST['field_map'] ?? [] );
+        $raw_map = (array) wp_unslash( $_POST['field_map'] ?? [] );
         $field_map = [];
         foreach ( $raw_map as $ghl_field => $gf_field_id ) {
             $ghl_field  = sanitize_text_field( $ghl_field );
@@ -705,7 +709,7 @@ class GoodConnect_Admin {
             if ( $ghl_field && $gf_field_id !== '' ) $field_map[ $ghl_field ] = $gf_field_id;
         }
 
-        $raw_custom = (array) ( $_POST['custom_fields'] ?? [] );
+        $raw_custom = (array) wp_unslash( $_POST['custom_fields'] ?? [] );
         $custom_fields = [];
         foreach ( $raw_custom as $row ) {
             $key      = sanitize_text_field( $row['ghl_key']     ?? '' );
@@ -713,10 +717,10 @@ class GoodConnect_Admin {
             if ( $key && $field_id ) $custom_fields[] = [ 'ghl_key' => $key, 'gf_field_id' => $field_id ];
         }
 
-        $raw_static = sanitize_text_field( $_POST['static_tags'] ?? '' );
+        $raw_static = sanitize_text_field( wp_unslash( $_POST['static_tags'] ?? '' ) );
         $static_tags = array_values( array_filter( array_map( 'trim', explode( ',', $raw_static ) ) ) );
 
-        $raw_dynamic = (array) ( $_POST['dynamic_tags'] ?? [] );
+        $raw_dynamic = (array) wp_unslash( $_POST['dynamic_tags'] ?? [] );
         $dynamic_tags = [];
         foreach ( $raw_dynamic as $row ) {
             $field_id = sanitize_text_field( $row['gf_field_id'] ?? '' );
@@ -724,7 +728,7 @@ class GoodConnect_Admin {
         }
 
         $config = [
-            'account_id'    => sanitize_text_field( $_POST['account_id'] ?? '' ),
+            'account_id'    => sanitize_text_field( wp_unslash( $_POST['account_id'] ?? '' ) ),
             'field_map'     => $field_map,
             'custom_fields' => $custom_fields,
             'static_tags'   => $static_tags,
@@ -739,10 +743,10 @@ class GoodConnect_Admin {
         check_ajax_referer( 'goodconnect_admin', 'nonce' );
         if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
 
-        $form_name = sanitize_text_field( $_POST['form_name'] ?? '' );
+        $form_name = sanitize_text_field( wp_unslash( $_POST['form_name'] ?? '' ) );
         if ( ! $form_name ) wp_send_json_error( 'Invalid form name' );
 
-        $raw_map = (array) ( $_POST['field_map'] ?? [] );
+        $raw_map = (array) wp_unslash( $_POST['field_map'] ?? [] );
         $field_map = [];
         foreach ( $raw_map as $ghl_field => $elementor_field_id ) {
             $ghl_field        = sanitize_text_field( $ghl_field );
@@ -750,7 +754,7 @@ class GoodConnect_Admin {
             if ( $ghl_field && $elementor_field_id !== '' ) $field_map[ $ghl_field ] = $elementor_field_id;
         }
 
-        $raw_custom = (array) ( $_POST['custom_fields'] ?? [] );
+        $raw_custom = (array) wp_unslash( $_POST['custom_fields'] ?? [] );
         $custom_fields = [];
         foreach ( $raw_custom as $row ) {
             $key   = sanitize_text_field( $row['ghl_key']        ?? '' );
@@ -758,11 +762,11 @@ class GoodConnect_Admin {
             if ( $key && $field ) $custom_fields[] = [ 'ghl_key' => $key, 'elementor_field' => $field ];
         }
 
-        $raw_static = sanitize_text_field( $_POST['static_tags'] ?? '' );
+        $raw_static = sanitize_text_field( wp_unslash( $_POST['static_tags'] ?? '' ) );
         $static_tags = array_values( array_filter( array_map( 'trim', explode( ',', $raw_static ) ) ) );
 
         $config = [
-            'account_id'    => sanitize_text_field( $_POST['account_id'] ?? '' ),
+            'account_id'    => sanitize_text_field( wp_unslash( $_POST['account_id'] ?? '' ) ),
             'field_map'     => $field_map,
             'custom_fields' => $custom_fields,
             'static_tags'   => $static_tags,
@@ -778,8 +782,8 @@ class GoodConnect_Admin {
         if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
 
         $options                 = get_option( GoodConnect_Settings::OPTION_KEY, [] );
-        $options['woo_enabled']  = ! empty( $_POST['woo_enabled'] ) ? '1' : '0';
-        $options['woo_account_id'] = sanitize_text_field( $_POST['woo_account_id'] ?? '' );
+        $options['woo_enabled']  = ! empty( $_POST['woo_enabled'] ) ? '1' : '0'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- boolean coerce
+        $options['woo_account_id'] = sanitize_text_field( wp_unslash( $_POST['woo_account_id'] ?? '' ) );
         update_option( GoodConnect_Settings::OPTION_KEY, $options );
         wp_send_json_success();
     }
@@ -795,7 +799,7 @@ class GoodConnect_Admin {
         check_ajax_referer( 'goodconnect_admin', 'nonce' );
         if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
 
-        $account_id = sanitize_text_field( $_POST['account_id'] ?? '' );
+        $account_id = sanitize_text_field( wp_unslash( $_POST['account_id'] ?? '' ) );
         $account    = $account_id
             ? GoodConnect_Settings::get_account_by_id( $account_id )
             : GoodConnect_Settings::get_default_account();
@@ -836,10 +840,10 @@ class GoodConnect_Admin {
         check_ajax_referer( 'goodconnect_admin', 'nonce' );
         if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
 
-        $form_id = absint( $_POST['form_id'] ?? 0 );
+        $form_id = absint( wp_unslash( $_POST['form_id'] ?? 0 ) );
         if ( ! $form_id ) wp_send_json_error( 'Invalid form ID' );
 
-        $raw_map = (array) ( $_POST['field_map'] ?? [] );
+        $raw_map = (array) wp_unslash( $_POST['field_map'] ?? [] );
         $field_map = [];
         foreach ( $raw_map as $ghl_field => $cf7_field ) {
             $ghl_field = sanitize_text_field( $ghl_field );
@@ -847,7 +851,7 @@ class GoodConnect_Admin {
             if ( $ghl_field && $cf7_field !== '' ) $field_map[ $ghl_field ] = $cf7_field;
         }
 
-        $raw_custom  = (array) ( $_POST['custom_fields'] ?? [] );
+        $raw_custom  = (array) wp_unslash( $_POST['custom_fields'] ?? [] );
         $custom_fields = [];
         foreach ( $raw_custom as $row ) {
             $key   = sanitize_text_field( $row['ghl_key']   ?? '' );
@@ -855,11 +859,11 @@ class GoodConnect_Admin {
             if ( $key && $field ) $custom_fields[] = [ 'ghl_key' => $key, 'cf7_field' => $field ];
         }
 
-        $raw_static  = sanitize_text_field( $_POST['static_tags'] ?? '' );
+        $raw_static  = sanitize_text_field( wp_unslash( $_POST['static_tags'] ?? '' ) );
         $static_tags = array_values( array_filter( array_map( 'trim', explode( ',', $raw_static ) ) ) );
 
         $config = [
-            'account_id'    => sanitize_text_field( $_POST['account_id'] ?? '' ),
+            'account_id'    => sanitize_text_field( wp_unslash( $_POST['account_id'] ?? '' ) ),
             'field_map'     => $field_map,
             'custom_fields' => $custom_fields,
             'static_tags'   => $static_tags,
@@ -874,7 +878,7 @@ class GoodConnect_Admin {
     public static function ajax_bulk_sync_start() {
         check_ajax_referer( 'goodconnect_admin', 'nonce' );
         if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
-        $account_id = sanitize_text_field( $_POST['account_id'] ?? '' );
+        $account_id = sanitize_text_field( wp_unslash( $_POST['account_id'] ?? '' ) );
         $started    = GoodConnect_BulkSync::start( $account_id );
         if ( $started ) {
             wp_send_json_success( GoodConnect_BulkSync::get_progress() );

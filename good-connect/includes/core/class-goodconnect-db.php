@@ -120,6 +120,7 @@ class GoodConnect_DB {
 
     public static function clear_log() {
         global $wpdb;
-        $wpdb->query( 'TRUNCATE TABLE ' . $wpdb->prefix . self::TABLE_ACTIVITY_LOG ); // phpcs:ignore
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+        $wpdb->query( 'TRUNCATE TABLE ' . $wpdb->prefix . self::TABLE_ACTIVITY_LOG );
     }
 }

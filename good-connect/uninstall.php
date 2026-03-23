@@ -4,6 +4,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) exit;
 global $wpdb;
 
 // Drop custom DB tables.
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 $wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . 'goodconnect_activity_log' );
 
 // Delete all plugin options.

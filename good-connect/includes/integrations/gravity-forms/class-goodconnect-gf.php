@@ -117,9 +117,7 @@ class GoodConnect_GF {
             ] );
         }
 
-        if ( ! $success ) {
-            error_log( '[GoodConnect] GF submission error (form ' . $form_id . '): ' . $result->get_error_message() );
-        }
+        // Errors are captured in the activity log above.
     }
 
     private static function resolve_merge_tags( string $template, $entry ): string {

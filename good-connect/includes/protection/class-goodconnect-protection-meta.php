@@ -58,11 +58,6 @@ class GoodConnect_Protection_Meta {
             </label>
             <textarea id="gc_denied_message" name="gc_denied_message" rows="3" style="width:100%"><?php echo esc_textarea( $denied_message ); ?></textarea>
         </p>
-        <script>
-        document.getElementById('gc_denied_action').addEventListener('change', function() {
-            document.getElementById('gc_denied_message_wrap').style.display = this.value === 'message' ? '' : 'none';
-        });
-        </script>
         <?php
     }
 
