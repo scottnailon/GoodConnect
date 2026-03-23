@@ -121,8 +121,10 @@ class GoodConnect_Admin {
                                value="<?php echo esc_attr( $options['api_key'] ?? '' ); ?>"
                                class="regular-text" autocomplete="new-password" />
                         <p class="description">
-                            <?php esc_html_e( 'Your GoHighLevel private integration API key.', 'good-connect' ); ?>
-                            <a href="https://goodhost.com.au/docs/goodconnect" target="_blank"><?php esc_html_e( 'Get help', 'good-connect' ); ?></a>
+                            <?php esc_html_e( 'Your GoHighLevel private integration API key.', 'good-connect' ); ?><br>
+                            <?php esc_html_e( 'To find this: in GoHighLevel go to', 'good-connect' ); ?>
+                            <strong><?php esc_html_e( 'Settings → Integrations → API Keys', 'good-connect' ); ?></strong>
+                            <?php esc_html_e( 'and create a new Private Integration key with the scopes you need.', 'good-connect' ); ?>
                         </p>
                     </td>
                 </tr>
@@ -133,7 +135,12 @@ class GoodConnect_Admin {
                                name="<?php echo esc_attr( GoodConnect_Settings::OPTION_KEY ); ?>[location_id]"
                                value="<?php echo esc_attr( $options['location_id'] ?? '' ); ?>"
                                class="regular-text" />
-                        <p class="description"><?php esc_html_e( 'The GHL Location (sub-account) ID to send data to.', 'good-connect' ); ?></p>
+                        <p class="description">
+                            <?php esc_html_e( 'The GHL Location (sub-account) ID to send data to.', 'good-connect' ); ?><br>
+                            <?php esc_html_e( 'To find this: in GoHighLevel go to', 'good-connect' ); ?>
+                            <strong><?php esc_html_e( 'Settings → Business Profile', 'good-connect' ); ?></strong>
+                            <?php esc_html_e( '— the Location ID is shown at the bottom of the page.', 'good-connect' ); ?>
+                        </p>
                     </td>
                 </tr>
             </table>
