@@ -121,10 +121,21 @@ class GoodConnect_Admin {
                                value="<?php echo esc_attr( $options['api_key'] ?? '' ); ?>"
                                class="regular-text" autocomplete="new-password" />
                         <p class="description">
-                            <?php esc_html_e( 'Your GoHighLevel private integration API key.', 'good-connect' ); ?><br>
-                            <?php esc_html_e( 'To find this: in GoHighLevel go to', 'good-connect' ); ?>
-                            <strong><?php esc_html_e( 'Settings → Integrations → API Keys', 'good-connect' ); ?></strong>
-                            <?php esc_html_e( 'and create a new Private Integration key with the scopes you need.', 'good-connect' ); ?>
+                            <?php esc_html_e( 'Your GoHighLevel Private Integration API key.', 'good-connect' ); ?><br><br>
+                            <strong><?php esc_html_e( 'How to create your API key:', 'good-connect' ); ?></strong>
+                            <ol style="margin:6px 0 0 18px;line-height:1.9">
+                                <li><?php esc_html_e( 'In GoHighLevel, go to', 'good-connect' ); ?> <strong><?php esc_html_e( 'Settings → Integrations → API Keys', 'good-connect' ); ?></strong></li>
+                                <li><?php esc_html_e( 'Click', 'good-connect' ); ?> <strong><?php esc_html_e( '+ Add Key', 'good-connect' ); ?></strong> <?php esc_html_e( 'and choose', 'good-connect' ); ?> <strong><?php esc_html_e( 'Private Integration Key', 'good-connect' ); ?></strong></li>
+                                <li><?php esc_html_e( 'Under Scopes, enable the following:', 'good-connect' ); ?>
+                                    <ul style="margin:4px 0 4px 18px;list-style:disc">
+                                        <li><code>contacts.read</code> &mdash; <?php esc_html_e( 'look up existing contacts', 'good-connect' ); ?></li>
+                                        <li><code>contacts.write</code> &mdash; <?php esc_html_e( 'create and update contacts', 'good-connect' ); ?></li>
+                                        <li><code>opportunities.read</code> &mdash; <?php esc_html_e( 'look up opportunities (optional)', 'good-connect' ); ?></li>
+                                        <li><code>opportunities.write</code> &mdash; <?php esc_html_e( 'create opportunities (optional)', 'good-connect' ); ?></li>
+                                    </ul>
+                                </li>
+                                <li><?php esc_html_e( 'Click', 'good-connect' ); ?> <strong><?php esc_html_e( 'Save', 'good-connect' ); ?></strong> <?php esc_html_e( 'then copy the key and paste it here.', 'good-connect' ); ?></li>
+                            </ol>
                         </p>
                     </td>
                 </tr>
