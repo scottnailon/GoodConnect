@@ -50,6 +50,32 @@ class GoodConnect_Admin {
                 'error'   => __( 'Error saving. Please try again.', 'good-connect' ),
             ],
         ] );
+
+        // Pass GF form data + mappings to JS if GF is active.
+        if ( class_exists( 'GFForms' ) && class_exists( 'GFAPI' ) ) {
+            $forms      = GFFormsModel::get_forms( true );
+            $forms_data = [];
+            foreach ( $forms as $form ) {
+                $form_obj = GFAPI::get_form( $form->id );
+                $fields   = [];
+                foreach ( $form_obj['fields'] as $field ) {
+                    $fields[] = [
+                        'id'    => (string) $field->id,
+                        'label' => $field->label ?: 'Field ' . $field->id,
+                    ];
+                }
+                $forms_data[] = [
+                    'id'      => (int) $form->id,
+                    'title'   => $form->title,
+                    'fields'  => $fields,
+                    'mapping' => GoodConnect_GF::get_field_mapping( (int) $form->id ),
+                ];
+            }
+            wp_localize_script( 'goodconnect-admin', 'GoodConnectGF', [
+                'forms'     => $forms_data,
+                'ghlFields' => self::ghl_contact_fields(),
+            ] );
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -181,31 +207,6 @@ class GoodConnect_Admin {
             return;
         }
 
-        // Pass all form data + existing mappings to JS so it can render without extra AJAX.
-        $forms_data = [];
-        $ghl_fields = self::ghl_contact_fields();
-
-        foreach ( $forms as $form ) {
-            $form_obj  = GFAPI::get_form( $form->id );
-            $fields    = [];
-            foreach ( $form_obj['fields'] as $field ) {
-                $fields[] = [
-                    'id'    => (string) $field->id,
-                    'label' => $field->label ?: sprintf( __( 'Field %s', 'good-connect' ), $field->id ),
-                ];
-            }
-            $forms_data[] = [
-                'id'      => (int) $form->id,
-                'title'   => $form->title,
-                'fields'  => $fields,
-                'mapping' => GoodConnect_GF::get_field_mapping( (int) $form->id ),
-            ];
-        }
-
-        wp_localize_script( 'goodconnect-admin', 'GoodConnectGF', [
-            'forms'     => $forms_data,
-            'ghlFields' => $ghl_fields,
-        ] );
         ?>
         <div class="goodconnect-gf-selector-row">
             <label for="goodconnect-gf-form-select"><strong><?php esc_html_e( 'Select a Form', 'good-connect' ); ?></strong></label>
