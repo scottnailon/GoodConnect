@@ -183,15 +183,16 @@ class GoodConnect_Admin {
             <ol style="margin:6px 0 0 18px;line-height:1.9">
                 <li><?php esc_html_e( 'In GoHighLevel, go to', 'good-connect' ); ?> <strong><?php esc_html_e( 'Settings → Private Integrations', 'good-connect' ); ?></strong></li>
                 <li><?php esc_html_e( 'Click', 'good-connect' ); ?> <strong><?php esc_html_e( 'Create private integration', 'good-connect' ); ?></strong></li>
+                <li><?php esc_html_e( 'Write a name and description based on what you wish to connect', 'good-connect' ); ?></li>
                 <li><?php esc_html_e( 'Enable scopes:', 'good-connect' ); ?>
                     <ul style="margin:4px 0 4px 18px;list-style:disc">
-                        <li><code>contacts.read</code> &mdash; <?php esc_html_e( 'look up existing contacts', 'good-connect' ); ?></li>
+                        <li><code>contacts.readonly</code> &mdash; <?php esc_html_e( 'look up existing contacts', 'good-connect' ); ?></li>
                         <li><code>contacts.write</code> &mdash; <?php esc_html_e( 'create and update contacts', 'good-connect' ); ?></li>
-                        <li><code>opportunities.read</code> &mdash; <?php esc_html_e( 'look up opportunities (optional)', 'good-connect' ); ?></li>
+                        <li><code>opportunities.readonly</code> &mdash; <?php esc_html_e( 'look up opportunities (optional)', 'good-connect' ); ?></li>
                         <li><code>opportunities.write</code> &mdash; <?php esc_html_e( 'create opportunities (optional)', 'good-connect' ); ?></li>
                     </ul>
                 </li>
-                <li><?php esc_html_e( 'Click Save then copy the key and paste it above.', 'good-connect' ); ?></li>
+                <li><?php esc_html_e( 'Click Create then copy the key and paste it above.', 'good-connect' ); ?></li>
             </ol>
             <p class="description" style="margin-top:10px;">
                 <?php esc_html_e( 'To find your Location ID: go to', 'good-connect' ); ?>

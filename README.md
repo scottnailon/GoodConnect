@@ -53,9 +53,9 @@ Click **+ Add Account** and fill in:
 
 | Scope | Purpose |
 |-------|---------|
-| `contacts.read` | Look up existing contacts |
+| `contacts.readonly` | Look up existing contacts |
 | `contacts.write` | Create and update contacts |
-| `opportunities.read` | Look up opportunities *(optional)* |
+| `opportunities.readonly` | Look up opportunities *(optional)* |
 | `opportunities.write` | Create opportunities *(optional)* |
 
 You can add multiple accounts (e.g. one per GHL sub-account). Mark one as **Default** — it will be used by any form that does not have a specific account selected.
