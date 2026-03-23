@@ -123,7 +123,7 @@ class GoodConnect_Admin {
             <nav class="nav-tab-wrapper goodconnect-tabs">
                 <?php foreach ( $tabs as $slug => $label ) : ?>
                     <a href="<?php echo esc_url( admin_url( 'admin.php?page=good-connect&tab=' . $slug ) ); ?>"
-                       class="nav-tab <?php echo $active_tab === $slug ? 'nav-tab-active' : ''; ?>">
+                       class="nav-tab <?php echo esc_attr( $active_tab === $slug ? 'nav-tab-active' : '' ); ?>">
                         <?php echo esc_html( $label ); ?>
                     </a>
                 <?php endforeach; ?>
@@ -576,7 +576,7 @@ class GoodConnect_Admin {
                 </select>
             </div>
 
-            <div id="gc-bulk-sync-progress-wrap" style="<?php echo $progress ? '' : 'display:none'; ?>">
+            <div id="gc-bulk-sync-progress-wrap" style="<?php echo esc_attr( $progress ? '' : 'display:none' ); ?>">
                 <div style="margin:12px 0;">
                     <strong><?php esc_html_e( 'Status:', 'good-connect' ); ?></strong>
                     <span id="gc-bulk-sync-status"><?php echo esc_html( $progress['status'] ?? '' ); ?></span>

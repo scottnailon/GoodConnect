@@ -52,7 +52,7 @@ class GoodConnect_Protection_Meta {
                 <option value="hide"     <?php selected( $denied_action, 'hide' ); ?>><?php esc_html_e( 'Show 403 error', 'good-connect' ); ?></option>
             </select>
         </p>
-        <p id="gc_denied_message_wrap" style="<?php echo $denied_action !== 'message' ? 'display:none' : ''; ?>">
+        <p id="gc_denied_message_wrap" style="<?php echo esc_attr( $denied_action !== 'message' ? 'display:none' : '' ); ?>">
             <label for="gc_denied_message" style="font-weight:600;display:block;margin-bottom:4px;">
                 <?php esc_html_e( 'Access denied message', 'good-connect' ); ?>
             </label>

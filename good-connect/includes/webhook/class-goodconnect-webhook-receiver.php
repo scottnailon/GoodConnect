@@ -15,7 +15,10 @@ class GoodConnect_Webhook_Receiver {
         register_rest_route( self::NAMESPACE, self::ROUTE, [
             'methods'             => WP_REST_Server::CREATABLE,
             'callback'            => [ __CLASS__, 'handle_request' ],
-            'permission_callback' => '__return_true', // auth done inside via secret
+            // Authentication is performed inside handle_request() via secret token (hash_equals).
+            // __return_true is required here because the endpoint must be publicly reachable
+            // from GoHighLevel servers which cannot obtain a WordPress nonce.
+            'permission_callback' => '__return_true',
         ] );
     }
 
