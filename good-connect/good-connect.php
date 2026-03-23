@@ -29,7 +29,14 @@ require_once GOODCONNECT_PLUGIN_DIR . 'includes/integrations/elementor/class-goo
 require_once GOODCONNECT_PLUGIN_DIR . 'includes/integrations/woocommerce/class-goodconnect-woo.php';
 
 function goodconnect_init() {
+    load_plugin_textdomain( 'good-connect', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
     $loader = new GoodConnect_Loader();
     $loader->run();
 }
 add_action( 'plugins_loaded', 'goodconnect_init' );
+
+register_activation_hook( __FILE__, 'goodconnect_activate' );
+function goodconnect_activate() {
+    // Reserve for future DB setup. Touch a version flag so we can run upgrades later.
+    add_option( 'goodconnect_db_version', GOODCONNECT_VERSION );
+}

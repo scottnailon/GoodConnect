@@ -174,3 +174,20 @@
 #goodconnect-elementor-forms {
     margin-top: 16px;
 }
+
+/* GF form selector row */
+.goodconnect-gf-selector-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.goodconnect-gf-selector-row select {
+    min-width: 280px;
+    font-size: 14px;
+}
+
+#goodconnect-gf-mapper-wrap .goodconnect-card {
+    margin-top: 0;
+}

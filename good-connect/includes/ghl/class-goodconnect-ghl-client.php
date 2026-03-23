@@ -49,6 +49,19 @@ class GoodConnect_GHL_Client {
      * @return array|WP_Error
      */
     public function trigger_webhook( string $webhook_url, array $data ) {
+        // Only allow HTTPS URLs pointing to GHL's webhook domains.
+        $parsed = wp_parse_url( $webhook_url );
+        $allowed_hosts = [ 'services.leadconnectorhq.com', 'backend.leadconnectorhq.com', 'hooks.zapier.com' ];
+        if (
+            empty( $parsed['scheme'] ) || $parsed['scheme'] !== 'https' ||
+            empty( $parsed['host'] ) || ! in_array( $parsed['host'], $allowed_hosts, true )
+        ) {
+            return new WP_Error(
+                'goodconnect_invalid_webhook',
+                __( 'GoodConnect: Webhook URL must be an HTTPS GoHighLevel webhook URL.', 'good-connect' )
+            );
+        }
+
         $response = wp_remote_post( $webhook_url, [
             'headers' => [ 'Content-Type' => 'application/json' ],
             'body'    => wp_json_encode( $data ),

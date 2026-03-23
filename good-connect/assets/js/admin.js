@@ -1,4 +1,4 @@
-/* global GoodConnect, jQuery */
+/* global GoodConnect, GoodConnectGF, jQuery */
 ( function ( $ ) {
     'use strict';
 
@@ -17,29 +17,82 @@
         }, 2500 );
     }
 
-    function setBusy( $btn, busy ) {
-        if ( busy ) {
-            $btn.prop( 'disabled', true ).text( GoodConnect.strings.saving );
-        } else {
-            $btn.prop( 'disabled', false ).text(
-                $btn.hasClass( 'goodconnect-save-woo' ) || $btn.attr( 'id' ) === 'goodconnect-save-woo'
-                    ? 'Save'
-                    : 'Save Mapping'
-            );
-        }
+    function setBusy( $btn, busy, label ) {
+        $btn.prop( 'disabled', busy ).text( busy ? GoodConnect.strings.saving : ( label || 'Save Mapping' ) );
     }
 
     // -------------------------------------------------------------------------
-    // Gravity Forms — save mapping
+    // Gravity Forms — form selector + dynamic mapper
     // -------------------------------------------------------------------------
 
-    $( document ).on( 'click', '.goodconnect-save-gf', function () {
+    var currentFormId = null;
+
+    function buildGFMapper( formId ) {
+        if ( typeof GoodConnectGF === 'undefined' ) return;
+
+        var form = null;
+        for ( var i = 0; i < GoodConnectGF.forms.length; i++ ) {
+            if ( GoodConnectGF.forms[ i ].id === parseInt( formId, 10 ) ) {
+                form = GoodConnectGF.forms[ i ];
+                break;
+            }
+        }
+        if ( ! form ) return;
+
+        currentFormId = form.id;
+
+        $( '#goodconnect-gf-form-title' ).text( form.title + ' (Form ID: ' + form.id + ')' );
+
+        // Build mapper rows — keep the header, replace rows.
+        var $mapper  = $( '#goodconnect-gf-mapper' );
+        $mapper.find( '.goodconnect-mapper-row' ).remove();
+
+        var ghlFields = GoodConnectGF.ghlFields;
+        $.each( ghlFields, function ( ghlKey, ghlLabel ) {
+            var savedValue = form.mapping[ ghlKey ] || '';
+
+            var $options = $( '<option>' ).val( '' ).text( '— Not mapped —' );
+            var $select  = $( '<select>' )
+                .addClass( 'goodconnect-gf-field-select' )
+                .attr( 'data-ghl-field', ghlKey )
+                .append( $options );
+
+            $.each( form.fields, function ( idx, field ) {
+                var $opt = $( '<option>' )
+                    .val( field.id )
+                    .text( field.label + ' (ID: ' + field.id + ')' );
+                if ( savedValue === field.id ) {
+                    $opt.prop( 'selected', true );
+                }
+                $select.append( $opt );
+            } );
+
+            var $row = $( '<div>' ).addClass( 'goodconnect-mapper-row' );
+            $row.append( $( '<label>' ).text( ghlLabel ) );
+            $row.append( $select );
+            $mapper.append( $row );
+        } );
+
+        $( '#goodconnect-gf-mapper-wrap' ).show();
+    }
+
+    $( '#goodconnect-gf-form-select' ).on( 'change', function () {
+        var formId = $( this ).val();
+        if ( ! formId ) {
+            $( '#goodconnect-gf-mapper-wrap' ).hide();
+            currentFormId = null;
+            return;
+        }
+        buildGFMapper( formId );
+    } );
+
+    $( '#goodconnect-save-gf' ).on( 'click', function () {
+        if ( ! currentFormId ) return;
+
         var $btn    = $( this );
-        var formId  = $btn.data( 'form-id' );
-        var $card   = $btn.closest( '.goodconnect-card' );
         var mapping = {};
 
-        $card.find( '.goodconnect-gf-field-select' ).each( function () {
+        $( '#goodconnect-gf-mapper .goodconnect-gf-field-select' ).each( function () {
             var ghlField = $( this ).data( 'ghl-field' );
             var gfField  = $( this ).val();
             if ( gfField ) {
@@ -52,17 +105,26 @@
         $.post( GoodConnect.ajaxurl, {
             action:  'goodconnect_save_gf_mapping',
             nonce:   GoodConnect.nonce,
-            form_id: formId,
+            form_id: currentFormId,
             mapping: mapping,
         } )
         .done( function ( res ) {
+            // Update local cache so switching away and back reflects saved state.
+            if ( res.success && typeof GoodConnectGF !== 'undefined' ) {
+                for ( var i = 0; i < GoodConnectGF.forms.length; i++ ) {
+                    if ( GoodConnectGF.forms[ i ].id === currentFormId ) {
+                        GoodConnectGF.forms[ i ].mapping = mapping;
+                        break;
+                    }
+                }
+            }
             showStatus( $btn, ! res.success );
         } )
         .fail( function () {
             showStatus( $btn, true );
         } )
         .always( function () {
-            setBusy( $btn, false );
+            setBusy( $btn, false, 'Save Mapping' );
         } );
     } );
 
@@ -120,7 +182,7 @@
             showStatus( $btn, true );
         } )
         .always( function () {
-            setBusy( $btn, false );
+            setBusy( $btn, false, 'Save Mapping' );
         } );
     } );
 
@@ -132,7 +194,7 @@
         var $btn    = $( this );
         var enabled = $( '#gc_woo_enabled' ).is( ':checked' ) ? 1 : 0;
 
-        setBusy( $btn, true );
+        setBusy( $btn, true, 'Save' );
 
         $.post( GoodConnect.ajaxurl, {
             action:      'goodconnect_save_woo_settings',
@@ -146,7 +208,7 @@
             showStatus( $btn, true );
         } )
         .always( function () {
-            setBusy( $btn, false );
+            setBusy( $btn, false, 'Save' );
         } );
     } );
 
