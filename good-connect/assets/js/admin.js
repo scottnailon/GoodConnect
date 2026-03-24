@@ -171,10 +171,12 @@
                 ghlCustomFieldsCache[ cacheKey ] = res.data;
                 callback( res.data );
             } else {
-                alert( res.data || 'Could not load GHL custom fields.' );
+                alert( ( res.data && typeof res.data === 'string' ? res.data : 'Could not load GHL custom fields. Check your API key and Location ID.' ) );
             }
         } )
-        .fail( function () { alert( 'Request failed. Check your GHL API key.' ); } );
+        .fail( function ( xhr ) {
+            alert( 'Request failed (HTTP ' + xhr.status + '). Check your browser console for details.' );
+        } );
     }
 
     /**

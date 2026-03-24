@@ -85,16 +85,21 @@ class GoodConnect_GHL_Client {
             return new WP_Error( 'goodconnect_no_api_key', __( 'GoodConnect: No API key configured.', 'good-connect' ) );
         }
 
-        $response = wp_remote_request( self::API_BASE . $endpoint, [
+        $args = [
             'method'  => $method,
             'headers' => [
                 'Authorization' => 'Bearer ' . $this->api_key,
                 'Content-Type'  => 'application/json',
                 'Version'       => '2021-07-28',
             ],
-            'body'    => wp_json_encode( $body ),
             'timeout' => 15,
-        ] );
+        ];
+
+        if ( $method !== 'GET' && ! empty( $body ) ) {
+            $args['body'] = wp_json_encode( $body );
+        }
+
+        $response = wp_remote_request( self::API_BASE . $endpoint, $args );
 
         if ( is_wp_error( $response ) ) return $response;
 
