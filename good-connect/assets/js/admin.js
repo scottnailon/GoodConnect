@@ -238,7 +238,8 @@
 
     $( document ).on( 'click', '.goodconnect-add-custom-field', function () {
         if ( ! currentFormData ) return;
-        $( '#goodconnect-gf-custom-fields' ).append( buildCustomFieldRow( '', '', currentFormData.fields ) );
+        var ghlFields = $( '#goodconnect-gf-custom-fields-wrap' ).data( 'ghl-fields' ) || [];
+        $( '#goodconnect-gf-custom-fields' ).append( buildCustomFieldRow( '', '', currentFormData.fields, ghlFields ) );
     } );
 
     $( document ).on( 'click', '.goodconnect-remove-custom-field', function () {
@@ -282,7 +283,12 @@
 
             // Populate existing selects within the relevant container.
             if ( target === 'gf' ) {
-                populateGHLSelects( $( '#goodconnect-gf-custom-fields' ), fields );
+                var $gfContainer = $( '#goodconnect-gf-custom-fields' );
+                populateGHLSelects( $gfContainer, fields );
+                // If no rows exist yet, add one so the user can see the dropdown.
+                if ( $gfContainer.find( '.goodconnect-custom-field-row' ).length === 0 && currentFormData ) {
+                    $gfContainer.append( buildCustomFieldRow( '', '', currentFormData.fields, fields ) );
+                }
                 // Store on the wrap for use when adding new rows.
                 $( '#goodconnect-gf-custom-fields-wrap' ).data( 'ghl-fields', fields );
             } else if ( target === 'elementor' ) {
