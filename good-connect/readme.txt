@@ -51,7 +51,7 @@ You must have a GoHighLevel account and a Private Integration API key to use thi
 
 1. In GoHighLevel, go to **Settings → Private Integrations**
 2. Click **Create private integration**
-3. Enable scopes: `contacts.readonly`, `contacts.write` (and optionally `opportunities.readonly`, `opportunities.write`)
+3. Enable scopes: `contacts.readonly`, `contacts.write`, `locations/customFields.readonly` (and optionally `opportunities.readonly`, `opportunities.write`)
 4. Click **Create** and copy the key
 
 = Finding your Location ID =

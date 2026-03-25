@@ -192,6 +192,7 @@ class GoodConnect_Admin {
                     <ul style="margin:4px 0 4px 18px;list-style:disc">
                         <li><code>contacts.readonly</code> &mdash; <?php esc_html_e( 'look up existing contacts', 'good-connect' ); ?></li>
                         <li><code>contacts.write</code> &mdash; <?php esc_html_e( 'create and update contacts', 'good-connect' ); ?></li>
+                        <li><code>locations/customFields.readonly</code> &mdash; <?php esc_html_e( 'load custom fields via "Load from GHL"', 'good-connect' ); ?></li>
                         <li><code>opportunities.readonly</code> &mdash; <?php esc_html_e( 'look up opportunities (optional)', 'good-connect' ); ?></li>
                         <li><code>opportunities.write</code> &mdash; <?php esc_html_e( 'create opportunities (optional)', 'good-connect' ); ?></li>
                     </ul>
