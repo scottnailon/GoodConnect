@@ -4,7 +4,7 @@ Tags: gohighlevel, crm, gravity forms, elementor, woocommerce, contact form 7, l
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -88,6 +88,12 @@ Each magic link token is a 64-character cryptographically random hex string, sto
 4. Activity Log — full history of all API calls and events
 
 == Changelog ==
+
+= 1.2.2 =
+* Fixed Load from GHL — fields now appear immediately after loading even when no rows exist yet
+* Fixed Load from GHL — new rows show GHL field dropdown after loading
+* Fixed Load from GHL — GET requests no longer send a body (resolves request failures)
+* Added locations/customFields.readonly to required API scope instructions
 
 = 1.2.1 =
 * GHL Custom Fields sync — Load from GHL button on Gravity Forms, Elementor, and Contact Form 7 tabs

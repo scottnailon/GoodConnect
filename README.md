@@ -55,6 +55,7 @@ Click **+ Add Account** and fill in:
 |-------|---------|
 | `contacts.readonly` | Look up existing contacts |
 | `contacts.write` | Create and update contacts |
+| `locations/customFields.readonly` | Load custom fields via **Load from GHL** |
 | `opportunities.readonly` | Look up opportunities *(optional)* |
 | `opportunities.write` | Create opportunities *(optional)* |
 
@@ -352,6 +353,13 @@ All data is removed when the plugin is uninstalled via **Plugins → Delete**.
 ---
 
 ## Changelog
+
+### 1.2.2
+- Fixed **Load from GHL** — GET requests no longer send a body, resolving request failures on some server configs
+- Fixed **Load from GHL** — fields now appear immediately after loading even when no custom field rows exist yet
+- Fixed **+ Add Custom Field** — new rows now show the GHL field dropdown (not a blank text input) after Load from GHL has been run
+- Added `locations/customFields.readonly` scope to required API key instructions — this scope is required for Load from GHL
+- WordPress.org submission preparation — output escaping, wp_unslash, inline JS moved to admin.js, silence files, readme.txt, LICENSE
 
 ### 1.2.1
 - GHL Custom Fields sync — **Load from GHL** button on Gravity Forms, Elementor, and Contact Form 7 tabs
