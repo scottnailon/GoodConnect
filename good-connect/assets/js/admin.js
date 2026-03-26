@@ -145,6 +145,45 @@
             $dtWrap.append( buildDynamicTagRow( row.gf_field_id, form.fields ) );
         } );
 
+        // Conditions.
+        var cond = config.conditions || {};
+        $( '#goodconnect-gf-conditions-enabled' ).prop( 'checked', !! cond.enabled );
+        $( '#goodconnect-gf-conditions-body' ).toggle( !! cond.enabled );
+        $( 'input[name="goodconnect_gf_condition_operator"][value="' + ( cond.operator || 'AND' ) + '"]' ).prop( 'checked', true );
+        var $rulesWrap = $( '#goodconnect-gf-condition-rules' );
+        $rulesWrap.empty();
+        $.each( cond.rules || [], function ( i, rule ) {
+            var $row = $( '<div>' ).addClass( 'goodconnect-dynamic-tag-row' ).css( 'margin-bottom', '6px' );
+            var $fieldSel = $( '<select>' ).addClass( 'gc-condition-field' );
+            $fieldSel.append( $( '<option>' ).val( '' ).text( '— Select field —' ) );
+            $.each( form.fields, function ( j, f ) {
+                $fieldSel.append( $( '<option>' ).val( f.id ).text( f.label ).prop( 'selected', f.id === rule.field ) );
+            } );
+            var $opSel = $( '<select>' ).addClass( 'gc-condition-operator' );
+            var operators = [
+                [ 'equals', 'equals' ], [ 'not_equals', 'not equals' ],
+                [ 'contains', 'contains' ], [ 'not_contains', 'does not contain' ],
+                [ 'starts_with', 'starts with' ], [ 'ends_with', 'ends with' ],
+                [ 'is_empty', 'is empty' ], [ 'is_not_empty', 'is not empty' ],
+            ];
+            $.each( operators, function ( k, op ) {
+                $opSel.append( $( '<option>' ).val( op[0] ).text( op[1] ).prop( 'selected', op[0] === rule.operator ) );
+            } );
+            var $valInput = $( '<input type="text">' ).addClass( 'gc-condition-value' ).val( rule.value || '' ).attr( 'placeholder', 'value' ).css( 'width', '120px' );
+            var $removeBtn = $( '<button type="button">' ).addClass( 'button goodconnect-remove-condition-rule' ).text( '\u2715' );
+            $row.append( $fieldSel, $opSel, $valInput, $removeBtn );
+            $rulesWrap.append( $row );
+        } );
+
+        // Opportunity.
+        var opp = config.opportunity || {};
+        $( '#goodconnect-gf-opp-enabled' ).prop( 'checked', !! opp.enabled );
+        $( '#goodconnect-gf-opp-body' ).toggle( !! opp.enabled );
+        $( '#goodconnect-gf-opp-pipeline' ).val( opp.pipeline_id    || '' );
+        $( '#goodconnect-gf-opp-stage'    ).val( opp.stage_id       || '' );
+        $( '#goodconnect-gf-opp-title'    ).val( opp.title          || '' );
+        $( '#goodconnect-gf-opp-value'    ).val( opp.monetary_value || '' );
+
         $( '#goodconnect-gf-mapper-wrap' ).show();
     }
 
@@ -256,6 +295,68 @@
     } );
 
     // =========================================================================
+    // GF CONDITIONS
+    // =========================================================================
+
+    $( document ).on( 'change', '#goodconnect-gf-conditions-enabled', function () {
+        $( '#goodconnect-gf-conditions-body' ).toggle( $( this ).is( ':checked' ) );
+    } );
+
+    $( document ).on( 'click', '.goodconnect-add-condition-rule', function () {
+        if ( ! currentFormData ) return;
+        var $row = $( '<div>' ).addClass( 'goodconnect-dynamic-tag-row' ).css( 'margin-bottom', '6px' );
+        // Field selector.
+        var $fieldSel = $( '<select>' ).addClass( 'gc-condition-field' );
+        $fieldSel.append( $( '<option>' ).val( '' ).text( '— Select field —' ) );
+        $.each( currentFormData.fields, function ( i, f ) {
+            $fieldSel.append( $( '<option>' ).val( f.id ).text( f.label ) );
+        } );
+        // Operator selector.
+        var $opSel = $( '<select>' ).addClass( 'gc-condition-operator' );
+        var operators = [
+            [ 'equals', 'equals' ], [ 'not_equals', 'not equals' ],
+            [ 'contains', 'contains' ], [ 'not_contains', 'does not contain' ],
+            [ 'starts_with', 'starts with' ], [ 'ends_with', 'ends with' ],
+            [ 'is_empty', 'is empty' ], [ 'is_not_empty', 'is not empty' ],
+        ];
+        $.each( operators, function ( i, op ) {
+            $opSel.append( $( '<option>' ).val( op[0] ).text( op[1] ) );
+        } );
+        var $valInput = $( '<input type="text">' ).addClass( 'gc-condition-value' ).attr( 'placeholder', 'value' ).css( 'width', '120px' );
+        var $removeBtn = $( '<button type="button">' ).addClass( 'button goodconnect-remove-condition-rule' ).text( '\u2715' );
+        $row.append( $fieldSel, $opSel, $valInput, $removeBtn );
+        $( '#goodconnect-gf-condition-rules' ).append( $row );
+    } );
+
+    $( document ).on( 'click', '.goodconnect-remove-condition-rule', function () {
+        $( this ).closest( '.goodconnect-dynamic-tag-row' ).remove();
+    } );
+
+    // =========================================================================
+    // GF OPPORTUNITY
+    // =========================================================================
+
+    $( document ).on( 'change', '#goodconnect-gf-opp-enabled', function () {
+        $( '#goodconnect-gf-opp-body' ).toggle( $( this ).is( ':checked' ) );
+    } );
+
+    // =========================================================================
+    // ELEMENTOR OPPORTUNITY
+    // =========================================================================
+
+    $( document ).on( 'change', '.goodconnect-elementor-opp-enabled', function () {
+        $( this ).closest( '.goodconnect-elementor-card' ).find( '.goodconnect-elementor-opp-body' ).toggle( $( this ).is( ':checked' ) );
+    } );
+
+    // =========================================================================
+    // CF7 OPPORTUNITY
+    // =========================================================================
+
+    $( document ).on( 'change', '.goodconnect-cf7-opp-enabled', function () {
+        $( this ).closest( '.goodconnect-cf7-card' ).find( '.goodconnect-cf7-opp-body' ).toggle( $( this ).is( ':checked' ) );
+    } );
+
+    // =========================================================================
     // LOAD FROM GHL — shared handler for all tabs
     // =========================================================================
 
@@ -284,7 +385,14 @@
             // Populate existing selects within the relevant container.
             if ( target === 'gf' ) {
                 var $gfContainer = $( '#goodconnect-gf-custom-fields' );
-                populateGHLSelects( $gfContainer, fields );
+                // Rebuild existing PHP-rendered rows (text inputs → selects).
+                $gfContainer.find( '.goodconnect-custom-field-row' ).each( function () {
+                    var $row    = $( this );
+                    var current = $row.find( '.gc-custom-ghl-key-select' ).val()
+                                || $row.find( '.gc-custom-ghl-key' ).val() || '';
+                    var $keyEl  = $row.find( '.gc-custom-ghl-key-select, .gc-custom-ghl-key' );
+                    $keyEl.replaceWith( makeGHLFieldSelect( fields, current ) );
+                } );
                 // If no rows exist yet, add one so the user can see the dropdown.
                 if ( $gfContainer.find( '.goodconnect-custom-field-row' ).length === 0 && currentFormData ) {
                     $gfContainer.append( buildCustomFieldRow( '', '', currentFormData.fields, fields ) );
@@ -292,10 +400,36 @@
                 // Store on the wrap for use when adding new rows.
                 $( '#goodconnect-gf-custom-fields-wrap' ).data( 'ghl-fields', fields );
             } else if ( target === 'elementor' ) {
-                populateGHLSelects( $card.find( '.goodconnect-elementor-custom-fields' ), fields );
+                var $elContainer = $card.find( '.goodconnect-elementor-custom-fields' );
+                // Rebuild existing PHP-rendered rows (they have single-option selects).
+                $elContainer.find( '.goodconnect-elementor-custom-field-row' ).each( function () {
+                    var $row    = $( this );
+                    var current = $row.find( '.gc-custom-ghl-key-select' ).val() || '';
+                    $row.find( '.gc-custom-ghl-key-select' ).replaceWith( makeGHLFieldSelect( fields, current ) );
+                } );
+                if ( $elContainer.find( '.goodconnect-custom-field-row' ).length === 0 ) {
+                    var $newRow = $( '<div>' ).addClass( 'goodconnect-custom-field-row goodconnect-elementor-custom-field-row' );
+                    $newRow.append( makeGHLFieldSelect( fields, '' ) );
+                    $newRow.append( $( '<input type="text">' ).addClass( 'gc-custom-elementor-field' ).attr( 'placeholder', 'Elementor field ID' ) );
+                    $newRow.append( $( '<button type="button">' ).addClass( 'button goodconnect-remove-custom-field' ).text( '\u2715' ) );
+                    $elContainer.append( $newRow );
+                }
                 $card.find( '.goodconnect-elementor-custom-fields-wrap' ).data( 'ghl-fields', fields );
             } else if ( target === 'cf7' ) {
-                populateGHLSelects( $card.find( '.goodconnect-cf7-custom-fields' ), fields );
+                var $cf7Container = $card.find( '.goodconnect-cf7-custom-fields' );
+                // Rebuild existing PHP-rendered rows.
+                $cf7Container.find( '.goodconnect-cf7-custom-field-row' ).each( function () {
+                    var $row    = $( this );
+                    var current = $row.find( '.gc-custom-ghl-key-select' ).val() || '';
+                    $row.find( '.gc-custom-ghl-key-select' ).replaceWith( makeGHLFieldSelect( fields, current ) );
+                } );
+                if ( $cf7Container.find( '.goodconnect-custom-field-row' ).length === 0 ) {
+                    var $newRow2 = $( '<div>' ).addClass( 'goodconnect-custom-field-row goodconnect-cf7-custom-field-row' );
+                    $newRow2.append( makeGHLFieldSelect( fields, '' ) );
+                    $newRow2.append( $( '<input type="text">' ).addClass( 'gc-custom-cf7-field' ).attr( 'placeholder', 'CF7 field name' ) );
+                    $newRow2.append( $( '<button type="button">' ).addClass( 'button goodconnect-remove-custom-field' ).text( '\u2715' ) );
+                    $cf7Container.append( $newRow2 );
+                }
                 $card.find( '.goodconnect-cf7-custom-fields-wrap' ).data( 'ghl-fields', fields );
             }
         } );
@@ -368,6 +502,28 @@
             if ( fid ) dynamic_tags.push( { gf_field_id: fid } );
         } );
 
+        // Collect conditions.
+        var conditions = {
+            enabled:  $( '#goodconnect-gf-conditions-enabled' ).is( ':checked' ) ? 1 : 0,
+            operator: $( 'input[name="goodconnect_gf_condition_operator"]:checked' ).val() || 'AND',
+            rules:    [],
+        };
+        $( '#goodconnect-gf-condition-rules .goodconnect-dynamic-tag-row' ).each( function () {
+            var field = $( this ).find( '.gc-condition-field' ).val();
+            var op    = $( this ).find( '.gc-condition-operator' ).val();
+            var val   = $( this ).find( '.gc-condition-value' ).val();
+            if ( field && op ) { conditions.rules.push( { field: field, operator: op, value: val } ); }
+        } );
+
+        // Collect opportunity.
+        var opportunity = {
+            enabled:        $( '#goodconnect-gf-opp-enabled' ).is( ':checked' ) ? 1 : 0,
+            pipeline_id:    $( '#goodconnect-gf-opp-pipeline' ).val(),
+            stage_id:       $( '#goodconnect-gf-opp-stage' ).val(),
+            title:          $( '#goodconnect-gf-opp-title' ).val(),
+            monetary_value: $( '#goodconnect-gf-opp-value' ).val(),
+        };
+
         setBusy( $btn, true, 'Save Mapping' );
         $.post( GoodConnect.ajaxurl, {
             action:        'goodconnect_save_gf_config',
@@ -378,6 +534,8 @@
             custom_fields: custom_fields,
             static_tags:   $( '#goodconnect-gf-static-tags' ).val(),
             dynamic_tags:  dynamic_tags,
+            conditions:    conditions,
+            opportunity:   opportunity,
         } )
         .done( function ( res ) {
             if ( res.success && currentFormData ) {
@@ -439,6 +597,13 @@
             field_map:     field_map,
             custom_fields: custom_fields,
             static_tags:   $card.find( '.goodconnect-elementor-static-tags' ).val(),
+            opportunity:   {
+                enabled:        $card.find( '.goodconnect-elementor-opp-enabled' ).is( ':checked' ) ? 1 : 0,
+                pipeline_id:    $card.find( '.goodconnect-elementor-opp-pipeline' ).val(),
+                stage_id:       $card.find( '.goodconnect-elementor-opp-stage' ).val(),
+                title:          $card.find( '.goodconnect-elementor-opp-title' ).val(),
+                monetary_value: $card.find( '.goodconnect-elementor-opp-value' ).val(),
+            },
         } )
         .done( function ( res ) { showStatus( $btn, ! res.success ); } )
         .fail( function () { showStatus( $btn, true ); } )
@@ -478,6 +643,13 @@
             field_map:     field_map,
             custom_fields: custom_fields,
             static_tags:   $card.find( '.goodconnect-cf7-static-tags' ).val(),
+            opportunity:   {
+                enabled:        $card.find( '.goodconnect-cf7-opp-enabled' ).is( ':checked' ) ? 1 : 0,
+                pipeline_id:    $card.find( '.goodconnect-cf7-opp-pipeline' ).val(),
+                stage_id:       $card.find( '.goodconnect-cf7-opp-stage' ).val(),
+                title:          $card.find( '.goodconnect-cf7-opp-title' ).val(),
+                monetary_value: $card.find( '.goodconnect-cf7-opp-value' ).val(),
+            },
         } )
         .done( function ( res ) { showStatus( $btn, ! res.success ); } )
         .fail( function () { showStatus( $btn, true ); } )
@@ -560,14 +732,37 @@
         var $btn = $( this );
         setBusy( $btn, true, 'Save' );
         $.post( GoodConnect.ajaxurl, {
-            action:         'goodconnect_save_woo_settings',
-            nonce:          GoodConnect.nonce,
-            woo_enabled:    $( '#gc_woo_enabled' ).is( ':checked' ) ? 1 : 0,
-            woo_account_id: $( '#gc_woo_account_id' ).val(),
+            action:           'goodconnect_save_woo_settings',
+            nonce:            GoodConnect.nonce,
+            woo_enabled:      $( '#gc_woo_enabled' ).is( ':checked' ) ? 1 : 0,
+            woo_account_id:   $( '#gc_woo_account_id' ).val(),
+            trigger_statuses: $( 'input[name="gc_woo_trigger_statuses[]"]:checked' ).map( function () { return $( this ).val(); } ).get(),
+            product_tags:     ( function () {
+                var tags = [];
+                $( '#gc-woo-product-tags .goodconnect-custom-field-row' ).each( function () {
+                    tags.push( {
+                        product_id: $( this ).find( '.gc-woo-product-id' ).val(),
+                        tags:       $( this ).find( '.gc-woo-product-tags' ).val(),
+                    } );
+                } );
+                return tags;
+            } )(),
         } )
         .done( function ( res ) { showStatus( $btn, ! res.success ); } )
         .fail( function () { showStatus( $btn, true ); } )
         .always( function () { setBusy( $btn, false, 'Save' ); } );
+    } );
+
+    // WooCommerce per-product tag add/remove.
+    $( document ).on( 'click', '#gc-woo-add-product-tag', function () {
+        var $row = $( '<div>' ).addClass( 'goodconnect-custom-field-row' );
+        $row.append( $( '<input type="number">' ).addClass( 'gc-woo-product-id small-text' ).attr( 'placeholder', 'Product ID' ) );
+        $row.append( $( '<input type="text">' ).addClass( 'gc-woo-product-tags regular-text' ).attr( 'placeholder', 'e.g. course-buyer, vip' ) );
+        $row.append( $( '<button type="button">' ).addClass( 'button gc-woo-remove-product-tag' ).text( '\u2715' ) );
+        $( '#gc-woo-product-tags' ).append( $row );
+    } );
+    $( document ).on( 'click', '.gc-woo-remove-product-tag', function () {
+        $( this ).closest( '.goodconnect-custom-field-row' ).remove();
     } );
 
     // =========================================================================

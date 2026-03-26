@@ -31,6 +31,13 @@ class GoodConnect_Admin {
     }
 
     public static function enqueue_assets( $hook ) {
+        // Enqueue on post/page edit screens for the protection meta box JS.
+        if ( in_array( $hook, [ 'post.php', 'post-new.php' ], true ) ) {
+            wp_enqueue_script( 'goodconnect-admin', GOODCONNECT_PLUGIN_URL . 'assets/js/admin.js', [ 'jquery' ], GOODCONNECT_VERSION, true );
+            // GoodConnect object is not needed on post screens — the meta box JS guards itself.
+            return;
+        }
+
         if ( $hook !== 'toplevel_page_good-connect' ) return;
 
         wp_enqueue_style( 'goodconnect-admin', GOODCONNECT_PLUGIN_URL . 'assets/css/admin.css', [], GOODCONNECT_VERSION );
@@ -287,6 +294,61 @@ class GoodConnect_Admin {
                     <button type="button" class="button goodconnect-add-dynamic-tag" style="margin-top:8px;">+ <?php esc_html_e( 'Add Dynamic Tag Field', 'good-connect' ); ?></button>
                 </div>
 
+                <div class="goodconnect-section" id="goodconnect-gf-conditions-wrap">
+                    <label class="goodconnect-section-label"><?php esc_html_e( 'Conditional Logic', 'good-connect' ); ?></label>
+                    <p class="description"><?php esc_html_e( 'Only send to GHL if these conditions pass. Leave disabled to always send.', 'good-connect' ); ?></p>
+                    <label class="goodconnect-toggle" style="margin-bottom:8px;">
+                        <input type="checkbox" id="goodconnect-gf-conditions-enabled" />
+                        <?php esc_html_e( 'Enable conditions', 'good-connect' ); ?>
+                    </label>
+                    <div id="goodconnect-gf-conditions-body" style="display:none;">
+                        <div style="margin-bottom:8px;">
+                            <label style="font-size:13px;margin-right:12px;">
+                                <input type="radio" name="goodconnect_gf_condition_operator" value="AND" checked />
+                                <?php esc_html_e( 'All conditions must match (AND)', 'good-connect' ); ?>
+                            </label>
+                            <label style="font-size:13px;">
+                                <input type="radio" name="goodconnect_gf_condition_operator" value="OR" />
+                                <?php esc_html_e( 'Any condition must match (OR)', 'good-connect' ); ?>
+                            </label>
+                        </div>
+                        <div id="goodconnect-gf-condition-rules"></div>
+                        <button type="button" class="button goodconnect-add-condition-rule" style="margin-top:6px;">
+                            + <?php esc_html_e( 'Add Condition', 'good-connect' ); ?>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="goodconnect-section" id="goodconnect-gf-opportunity-wrap">
+                    <label class="goodconnect-section-label"><?php esc_html_e( 'Opportunity Creation', 'good-connect' ); ?></label>
+                    <p class="description"><?php esc_html_e( 'Create a GHL pipeline opportunity when this form is submitted.', 'good-connect' ); ?></p>
+                    <label class="goodconnect-toggle" style="margin-bottom:8px;">
+                        <input type="checkbox" id="goodconnect-gf-opp-enabled" />
+                        <?php esc_html_e( 'Enable opportunity creation', 'good-connect' ); ?>
+                    </label>
+                    <div id="goodconnect-gf-opp-body" style="display:none;">
+                        <table class="form-table" style="margin:0;">
+                            <tr>
+                                <th style="padding:6px 10px 6px 0;font-weight:600;font-size:13px;width:140px;"><?php esc_html_e( 'Pipeline ID', 'good-connect' ); ?></th>
+                                <td style="padding:4px 0;"><input type="text" id="goodconnect-gf-opp-pipeline" class="regular-text" placeholder="e.g. abc123" /></td>
+                            </tr>
+                            <tr>
+                                <th style="padding:6px 10px 6px 0;font-weight:600;font-size:13px;"><?php esc_html_e( 'Stage ID', 'good-connect' ); ?></th>
+                                <td style="padding:4px 0;"><input type="text" id="goodconnect-gf-opp-stage" class="regular-text" placeholder="e.g. def456" /></td>
+                            </tr>
+                            <tr>
+                                <th style="padding:6px 10px 6px 0;font-weight:600;font-size:13px;"><?php esc_html_e( 'Title', 'good-connect' ); ?></th>
+                                <td style="padding:4px 0;"><input type="text" id="goodconnect-gf-opp-title" class="regular-text" placeholder="e.g. Enquiry from {1}" />
+                                <p class="description"><?php esc_html_e( 'Use {field_id} to insert a field value, e.g. {3} for field 3.', 'good-connect' ); ?></p></td>
+                            </tr>
+                            <tr>
+                                <th style="padding:6px 10px 6px 0;font-weight:600;font-size:13px;"><?php esc_html_e( 'Value ($)', 'good-connect' ); ?></th>
+                                <td style="padding:4px 0;"><input type="text" id="goodconnect-gf-opp-value" class="small-text" placeholder="0" /></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
                 <div class="goodconnect-card-footer">
                     <button type="button" class="button button-primary" id="goodconnect-save-gf"><?php esc_html_e( 'Save Mapping', 'good-connect' ); ?></button>
                     <span class="goodconnect-save-status"></span>
@@ -394,6 +456,35 @@ class GoodConnect_Admin {
                        value="<?php echo esc_attr( $static_tags ); ?>" />
             </div>
 
+            <div class="goodconnect-section goodconnect-elementor-opportunity-wrap">
+                <label class="goodconnect-section-label"><?php esc_html_e( 'Opportunity Creation', 'good-connect' ); ?></label>
+                <p class="description"><?php esc_html_e( 'Create a GHL pipeline opportunity when this form is submitted.', 'good-connect' ); ?></p>
+                <label class="goodconnect-toggle" style="margin-bottom:8px;">
+                    <input type="checkbox" class="goodconnect-elementor-opp-enabled" <?php checked( ! empty( $config['opportunity']['enabled'] ) ); ?> />
+                    <?php esc_html_e( 'Enable opportunity creation', 'good-connect' ); ?>
+                </label>
+                <div class="goodconnect-elementor-opp-body" style="<?php echo esc_attr( empty( $config['opportunity']['enabled'] ) ? 'display:none' : '' ); ?>">
+                    <table class="form-table" style="margin:0;">
+                        <tr>
+                            <th style="padding:6px 10px 6px 0;font-weight:600;font-size:13px;width:140px;"><?php esc_html_e( 'Pipeline ID', 'good-connect' ); ?></th>
+                            <td style="padding:4px 0;"><input type="text" class="goodconnect-elementor-opp-pipeline regular-text" value="<?php echo esc_attr( $config['opportunity']['pipeline_id'] ?? '' ); ?>" /></td>
+                        </tr>
+                        <tr>
+                            <th style="padding:6px 10px 6px 0;font-weight:600;font-size:13px;"><?php esc_html_e( 'Stage ID', 'good-connect' ); ?></th>
+                            <td style="padding:4px 0;"><input type="text" class="goodconnect-elementor-opp-stage regular-text" value="<?php echo esc_attr( $config['opportunity']['stage_id'] ?? '' ); ?>" /></td>
+                        </tr>
+                        <tr>
+                            <th style="padding:6px 10px 6px 0;font-weight:600;font-size:13px;"><?php esc_html_e( 'Title', 'good-connect' ); ?></th>
+                            <td style="padding:4px 0;"><input type="text" class="goodconnect-elementor-opp-title regular-text" value="<?php echo esc_attr( $config['opportunity']['title'] ?? '' ); ?>" placeholder="e.g. Enquiry from {email}" /></td>
+                        </tr>
+                        <tr>
+                            <th style="padding:6px 10px 6px 0;font-weight:600;font-size:13px;"><?php esc_html_e( 'Value ($)', 'good-connect' ); ?></th>
+                            <td style="padding:4px 0;"><input type="text" class="goodconnect-elementor-opp-value small-text" value="<?php echo esc_attr( $config['opportunity']['monetary_value'] ?? '' ); ?>" placeholder="0" /></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
             <div class="goodconnect-card-footer">
                 <button type="button" class="button button-primary goodconnect-save-elementor"><?php esc_html_e( 'Save Mapping', 'good-connect' ); ?></button>
                 <span class="goodconnect-save-status"></span>
@@ -439,6 +530,40 @@ class GoodConnect_Admin {
                 <li><?php esc_html_e( 'Fields sent: firstName, lastName, email, phone, address1, city, state, postalCode, country', 'good-connect' ); ?></li>
                 <li><?php esc_html_e( 'Tag:', 'good-connect' ); ?> <code>woocommerce-customer</code></li>
             </ul>
+
+            <div class="goodconnect-section">
+                <label class="goodconnect-section-label"><?php esc_html_e( 'Trigger on Order Status', 'good-connect' ); ?></label>
+                <p class="description"><?php esc_html_e( 'Send to GHL when an order reaches any of these statuses.', 'good-connect' ); ?></p>
+                <?php
+                $trigger_statuses = (array) GoodConnect_Settings::get( 'woo_trigger_statuses' ) ?: [ 'processing' ];
+                $woo_statuses = wc_get_order_statuses();
+                foreach ( $woo_statuses as $status_key => $status_label ) :
+                    $key = str_replace( 'wc-', '', $status_key );
+                ?>
+                    <label style="display:inline-flex;align-items:center;gap:6px;margin-right:16px;margin-bottom:4px;">
+                        <input type="checkbox" name="gc_woo_trigger_statuses[]"
+                               value="<?php echo esc_attr( $key ); ?>"
+                               <?php checked( in_array( $key, $trigger_statuses, true ) ); ?> />
+                        <?php echo esc_html( $status_label ); ?>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="goodconnect-section">
+                <label class="goodconnect-section-label"><?php esc_html_e( 'Per-Product Tags', 'good-connect' ); ?></label>
+                <p class="description"><?php esc_html_e( 'Add extra GHL tags based on the product purchased. Enter the product ID and comma-separated tags.', 'good-connect' ); ?></p>
+                <?php $product_tags = (array) GoodConnect_Settings::get( 'woo_product_tags' ) ?: []; ?>
+                <div id="gc-woo-product-tags">
+                    <?php foreach ( $product_tags as $row ) : ?>
+                        <div class="goodconnect-custom-field-row">
+                            <input type="number" class="gc-woo-product-id small-text" placeholder="<?php esc_attr_e( 'Product ID', 'good-connect' ); ?>" value="<?php echo esc_attr( $row['product_id'] ?? '' ); ?>" />
+                            <input type="text" class="gc-woo-product-tags regular-text" placeholder="<?php esc_attr_e( 'e.g. course-buyer, vip', 'good-connect' ); ?>" value="<?php echo esc_attr( $row['tags'] ?? '' ); ?>" />
+                            <button type="button" class="button gc-woo-remove-product-tag">&times;</button>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <button type="button" class="button" id="gc-woo-add-product-tag" style="margin-top:8px;">+ <?php esc_html_e( 'Add Product Tag', 'good-connect' ); ?></button>
+            </div>
 
             <div class="goodconnect-card-footer">
                 <button type="button" class="button button-primary" id="goodconnect-save-woo"><?php esc_html_e( 'Save', 'good-connect' ); ?></button>
@@ -544,6 +669,36 @@ class GoodConnect_Admin {
                 <input type="text" class="goodconnect-cf7-static-tags regular-text"
                        placeholder="e.g. webinar-lead, Q1-2026"
                        value="<?php echo esc_attr( $static_tags ); ?>" />
+            </div>
+
+            <div class="goodconnect-section goodconnect-cf7-opportunity-wrap">
+                <label class="goodconnect-section-label"><?php esc_html_e( 'Opportunity Creation', 'good-connect' ); ?></label>
+                <p class="description"><?php esc_html_e( 'Create a GHL pipeline opportunity when this form is submitted.', 'good-connect' ); ?></p>
+                <label class="goodconnect-toggle" style="margin-bottom:8px;">
+                    <input type="checkbox" class="goodconnect-cf7-opp-enabled" <?php checked( ! empty( $config['opportunity']['enabled'] ) ); ?> />
+                    <?php esc_html_e( 'Enable opportunity creation', 'good-connect' ); ?>
+                </label>
+                <div class="goodconnect-cf7-opp-body" style="<?php echo esc_attr( empty( $config['opportunity']['enabled'] ) ? 'display:none' : '' ); ?>">
+                    <table class="form-table" style="margin:0;">
+                        <tr>
+                            <th style="padding:6px 10px 6px 0;font-weight:600;font-size:13px;width:140px;"><?php esc_html_e( 'Pipeline ID', 'good-connect' ); ?></th>
+                            <td style="padding:4px 0;"><input type="text" class="goodconnect-cf7-opp-pipeline regular-text" value="<?php echo esc_attr( $config['opportunity']['pipeline_id'] ?? '' ); ?>" /></td>
+                        </tr>
+                        <tr>
+                            <th style="padding:6px 10px 6px 0;font-weight:600;font-size:13px;"><?php esc_html_e( 'Stage ID', 'good-connect' ); ?></th>
+                            <td style="padding:4px 0;"><input type="text" class="goodconnect-cf7-opp-stage regular-text" value="<?php echo esc_attr( $config['opportunity']['stage_id'] ?? '' ); ?>" /></td>
+                        </tr>
+                        <tr>
+                            <th style="padding:6px 10px 6px 0;font-weight:600;font-size:13px;"><?php esc_html_e( 'Title', 'good-connect' ); ?></th>
+                            <td style="padding:4px 0;"><input type="text" class="goodconnect-cf7-opp-title regular-text" value="<?php echo esc_attr( $config['opportunity']['title'] ?? '' ); ?>" placeholder="e.g. Enquiry from {your-name}" />
+                            <p class="description"><?php esc_html_e( 'Use {field_name} to insert a CF7 field value.', 'good-connect' ); ?></p></td>
+                        </tr>
+                        <tr>
+                            <th style="padding:6px 10px 6px 0;font-weight:600;font-size:13px;"><?php esc_html_e( 'Value ($)', 'good-connect' ); ?></th>
+                            <td style="padding:4px 0;"><input type="text" class="goodconnect-cf7-opp-value small-text" value="<?php echo esc_attr( $config['opportunity']['monetary_value'] ?? '' ); ?>" placeholder="0" /></td>
+                        </tr>
+                    </table>
+                </div>
             </div>
 
             <div class="goodconnect-card-footer">
@@ -728,12 +883,43 @@ class GoodConnect_Admin {
             if ( $field_id ) $dynamic_tags[] = [ 'gf_field_id' => $field_id ];
         }
 
+        // Conditions.
+        $raw_conditions = (array) wp_unslash( $_POST['conditions'] ?? [] );
+        $conditions_enabled = ! empty( $raw_conditions['enabled'] );
+        $conditions_operator = in_array( $raw_conditions['operator'] ?? 'AND', [ 'AND', 'OR' ], true ) ? $raw_conditions['operator'] : 'AND';
+        $raw_rules = (array) ( $raw_conditions['rules'] ?? [] );
+        $conditions_rules = [];
+        foreach ( $raw_rules as $rule ) {
+            $field    = sanitize_text_field( $rule['field']    ?? '' );
+            $operator = sanitize_key(        $rule['operator'] ?? '' );
+            $value    = sanitize_text_field( $rule['value']    ?? '' );
+            if ( $field && $operator ) {
+                $conditions_rules[] = [ 'field' => $field, 'operator' => $operator, 'value' => $value ];
+            }
+        }
+
+        // Opportunity.
+        $raw_opp = (array) wp_unslash( $_POST['opportunity'] ?? [] );
+        $opportunity = [
+            'enabled'        => ! empty( $raw_opp['enabled'] ),
+            'pipeline_id'    => sanitize_text_field( $raw_opp['pipeline_id']    ?? '' ),
+            'stage_id'       => sanitize_text_field( $raw_opp['stage_id']       ?? '' ),
+            'title'          => sanitize_text_field( $raw_opp['title']          ?? '' ),
+            'monetary_value' => sanitize_text_field( $raw_opp['monetary_value'] ?? '' ),
+        ];
+
         $config = [
             'account_id'    => sanitize_text_field( wp_unslash( $_POST['account_id'] ?? '' ) ),
             'field_map'     => $field_map,
             'custom_fields' => $custom_fields,
             'static_tags'   => $static_tags,
             'dynamic_tags'  => $dynamic_tags,
+            'conditions'    => [
+                'enabled'  => $conditions_enabled,
+                'operator' => $conditions_operator,
+                'rules'    => $conditions_rules,
+            ],
+            'opportunity'   => $opportunity,
         ];
 
         GoodConnect_GF::save_form_config( $form_id, $config );
@@ -766,12 +952,23 @@ class GoodConnect_Admin {
         $raw_static = sanitize_text_field( wp_unslash( $_POST['static_tags'] ?? '' ) );
         $static_tags = array_values( array_filter( array_map( 'trim', explode( ',', $raw_static ) ) ) );
 
+        // Opportunity.
+        $raw_opp = (array) wp_unslash( $_POST['opportunity'] ?? [] );
+        $opportunity = [
+            'enabled'        => ! empty( $raw_opp['enabled'] ),
+            'pipeline_id'    => sanitize_text_field( $raw_opp['pipeline_id']    ?? '' ),
+            'stage_id'       => sanitize_text_field( $raw_opp['stage_id']       ?? '' ),
+            'title'          => sanitize_text_field( $raw_opp['title']          ?? '' ),
+            'monetary_value' => sanitize_text_field( $raw_opp['monetary_value'] ?? '' ),
+        ];
+
         $config = [
             'account_id'    => sanitize_text_field( wp_unslash( $_POST['account_id'] ?? '' ) ),
             'field_map'     => $field_map,
             'custom_fields' => $custom_fields,
             'static_tags'   => $static_tags,
             'dynamic_tags'  => [],
+            'opportunity'   => $opportunity,
         ];
 
         GoodConnect_Elementor::save_form_config( $form_name, $config );
@@ -785,6 +982,23 @@ class GoodConnect_Admin {
         $options                 = get_option( GoodConnect_Settings::OPTION_KEY, [] );
         $options['woo_enabled']  = ! empty( $_POST['woo_enabled'] ) ? '1' : '0'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- boolean coerce
         $options['woo_account_id'] = sanitize_text_field( wp_unslash( $_POST['woo_account_id'] ?? '' ) );
+
+        // Trigger statuses.
+        $raw_statuses = (array) wp_unslash( $_POST['trigger_statuses'] ?? [ 'processing' ] );
+        $options['woo_trigger_statuses'] = array_values( array_filter( array_map( 'sanitize_key', $raw_statuses ) ) );
+
+        // Per-product tags.
+        $raw_product_tags = (array) wp_unslash( $_POST['product_tags'] ?? [] );
+        $product_tags = [];
+        foreach ( $raw_product_tags as $row ) {
+            $product_id = absint( $row['product_id'] ?? 0 );
+            $tags       = sanitize_text_field( $row['tags'] ?? '' );
+            if ( $product_id && $tags ) {
+                $product_tags[] = [ 'product_id' => $product_id, 'tags' => $tags ];
+            }
+        }
+        $options['woo_product_tags'] = $product_tags;
+
         update_option( GoodConnect_Settings::OPTION_KEY, $options );
         wp_send_json_success();
     }
@@ -863,6 +1077,16 @@ class GoodConnect_Admin {
         $raw_static  = sanitize_text_field( wp_unslash( $_POST['static_tags'] ?? '' ) );
         $static_tags = array_values( array_filter( array_map( 'trim', explode( ',', $raw_static ) ) ) );
 
+        // Opportunity.
+        $raw_opp = (array) wp_unslash( $_POST['opportunity'] ?? [] );
+        $opportunity = [
+            'enabled'        => ! empty( $raw_opp['enabled'] ),
+            'pipeline_id'    => sanitize_text_field( $raw_opp['pipeline_id']    ?? '' ),
+            'stage_id'       => sanitize_text_field( $raw_opp['stage_id']       ?? '' ),
+            'title'          => sanitize_text_field( $raw_opp['title']          ?? '' ),
+            'monetary_value' => sanitize_text_field( $raw_opp['monetary_value'] ?? '' ),
+        ];
+
         $config = [
             'account_id'    => sanitize_text_field( wp_unslash( $_POST['account_id'] ?? '' ) ),
             'field_map'     => $field_map,
@@ -870,6 +1094,7 @@ class GoodConnect_Admin {
             'static_tags'   => $static_tags,
             'dynamic_tags'  => [],
             'conditions'    => [ 'enabled' => false, 'operator' => 'AND', 'rules' => [] ],
+            'opportunity'   => $opportunity,
         ];
 
         GoodConnect_CF7::save_form_config( $form_id, $config );

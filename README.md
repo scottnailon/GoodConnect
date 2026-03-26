@@ -354,6 +354,14 @@ All data is removed when the plugin is uninstalled via **Plugins → Delete**.
 
 ## Changelog
 
+### 1.2.3
+- Gravity Forms — Conditions UI now visible and functional in the admin tab
+- Gravity Forms — Opportunity creation UI (pipeline, stage, title, value) now available in admin tab
+- Elementor & CF7 — Opportunity creation UI added to all form cards
+- WooCommerce — Trigger statuses and per-product tags UI now configurable in admin
+- Load from GHL — existing saved custom field rows now replaced with populated dropdowns on all tabs
+- Protection meta box JS now correctly enqueued on post/page edit screens
+
 ### 1.2.2
 - Fixed **Load from GHL** — GET requests no longer send a body, resolving request failures on some server configs
 - Fixed **Load from GHL** — fields now appear immediately after loading even when no custom field rows exist yet

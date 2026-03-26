@@ -4,7 +4,7 @@ Tags: gohighlevel, crm, gravity forms, elementor, woocommerce, contact form 7, l
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 1.2.2
+Stable tag: 1.2.3
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -88,6 +88,14 @@ Each magic link token is a 64-character cryptographically random hex string, sto
 4. Activity Log — full history of all API calls and events
 
 == Changelog ==
+
+= 1.2.3 =
+* Gravity Forms — Conditions UI now visible and functional in the admin tab
+* Gravity Forms — Opportunity creation UI (pipeline, stage, title, value) now available in admin tab
+* Elementor & CF7 — Opportunity creation UI added to all form cards
+* WooCommerce — Trigger statuses (configurable per order status) and per-product tags UI added
+* Load from GHL — existing saved custom field rows now properly replaced with populated dropdowns on all tabs
+* Protection meta box — admin JS now correctly enqueued on post/page edit screens
 
 = 1.2.2 =
 * Fixed Load from GHL — fields now appear immediately after loading even when no rows exist yet
