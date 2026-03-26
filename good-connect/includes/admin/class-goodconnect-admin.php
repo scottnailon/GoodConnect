@@ -211,6 +211,12 @@ class GoodConnect_Admin {
                 <strong><?php esc_html_e( 'Settings → Business Profile', 'good-connect' ); ?></strong>
                 <?php esc_html_e( '— the Location ID is shown at the bottom of the page.', 'good-connect' ); ?>
             </p>
+            <p class="description" style="margin-top:8px;">
+                <?php esc_html_e( "Don't have a GoHighLevel account?", 'good-connect' ); ?>
+                <a href="https://www.gohighlevel.com/?fp_ref=goodhost" target="_blank" rel="noopener">
+                    <?php esc_html_e( 'Sign up here.', 'good-connect' ); ?>
+                </a>
+            </p>
         </div>
 
         <template id="goodconnect-account-row-template">
