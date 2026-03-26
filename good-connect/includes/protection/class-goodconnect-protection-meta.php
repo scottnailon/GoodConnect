@@ -67,9 +67,9 @@ class GoodConnect_Protection_Meta {
         if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
         if ( ! current_user_can( 'edit_post', $post_id ) ) return;
 
-        $tags    = sanitize_text_field( $_POST['gc_required_tags']  ?? '' );
-        $action  = sanitize_key(        $_POST['gc_denied_action']  ?? 'redirect' );
-        $message = sanitize_textarea_field( $_POST['gc_denied_message'] ?? '' );
+        $tags    = sanitize_text_field( wp_unslash( $_POST['gc_required_tags']  ?? '' ) );
+        $action  = sanitize_key(        wp_unslash( $_POST['gc_denied_action']  ?? 'redirect' ) );
+        $message = sanitize_textarea_field( wp_unslash( $_POST['gc_denied_message'] ?? '' ) );
 
         update_post_meta( $post_id, '_gc_required_tags',  $tags );
         update_post_meta( $post_id, '_gc_denied_action',  $action );

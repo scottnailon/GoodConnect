@@ -39,8 +39,8 @@ class GoodConnect_Log_Table extends WP_List_Table {
     public function prepare_items() {
         $per_page = 20;
         $page     = $this->get_pagenum();
-        $source   = sanitize_key( $_GET['gc_source'] ?? '' );
-        $success  = isset( $_GET['gc_success'] ) ? sanitize_key( $_GET['gc_success'] ) : 'all';
+        $source   = sanitize_key( wp_unslash( $_GET['gc_source'] ?? '' ) );
+        $success  = isset( $_GET['gc_success'] ) ? sanitize_key( wp_unslash( $_GET['gc_success'] ) ) : 'all';
 
         $result = GoodConnect_DB::get_logs( [
             'per_page' => $per_page,
