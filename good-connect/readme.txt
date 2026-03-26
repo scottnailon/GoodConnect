@@ -96,6 +96,7 @@ Each magic link token is a 64-character cryptographically random hex string, sto
 * WooCommerce — Trigger statuses (configurable per order status) and per-product tags UI added
 * Load from GHL — existing saved custom field rows now properly replaced with populated dropdowns on all tabs
 * Protection meta box — admin JS now correctly enqueued on post/page edit screens
+* Settings tab — GHL affiliate sign-up link added below API key instructions
 
 = 1.2.2 =
 * Fixed Load from GHL — fields now appear immediately after loading even when no rows exist yet

@@ -61,6 +61,8 @@ Click **+ Add Account** and fill in:
 
 You can add multiple accounts (e.g. one per GHL sub-account). Mark one as **Default** — it will be used by any form that does not have a specific account selected.
 
+> Don't have a GoHighLevel account? [Sign up here.](https://www.gohighlevel.com/?fp_ref=goodhost)
+
 Click **Save Accounts**.
 
 ---
@@ -361,6 +363,7 @@ All data is removed when the plugin is uninstalled via **Plugins → Delete**.
 - WooCommerce — Trigger statuses and per-product tags UI now configurable in admin
 - Load from GHL — existing saved custom field rows now replaced with populated dropdowns on all tabs
 - Protection meta box JS now correctly enqueued on post/page edit screens
+- Settings tab — GHL affiliate link added below API key instructions
 
 ### 1.2.2
 - Fixed **Load from GHL** — GET requests no longer send a body, resolving request failures on some server configs
