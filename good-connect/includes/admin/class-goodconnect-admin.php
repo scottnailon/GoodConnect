@@ -191,6 +191,12 @@ class GoodConnect_Admin {
 
         <div class="goodconnect-card">
             <h3 class="goodconnect-card-title"><?php esc_html_e( 'How to create your API key', 'good-connect' ); ?></h3>
+            <p class="description" style="margin-bottom:8px;">
+                <?php esc_html_e( "Don't have a GoHighLevel account?", 'good-connect' ); ?>
+                <a href="https://www.gohighlevel.com/?fp_ref=goodhost" target="_blank" rel="noopener">
+                    <?php esc_html_e( 'Sign up here.', 'good-connect' ); ?>
+                </a>
+            </p>
             <ol style="margin:6px 0 0 18px;line-height:1.9">
                 <li><?php esc_html_e( 'In GoHighLevel, go to', 'good-connect' ); ?> <strong><?php esc_html_e( 'Settings → Private Integrations', 'good-connect' ); ?></strong></li>
                 <li><?php esc_html_e( 'Click', 'good-connect' ); ?> <strong><?php esc_html_e( 'Create private integration', 'good-connect' ); ?></strong></li>
@@ -210,12 +216,6 @@ class GoodConnect_Admin {
                 <?php esc_html_e( 'To find your Location ID: go to', 'good-connect' ); ?>
                 <strong><?php esc_html_e( 'Settings → Business Profile', 'good-connect' ); ?></strong>
                 <?php esc_html_e( '— the Location ID is shown at the bottom of the page.', 'good-connect' ); ?>
-            </p>
-            <p class="description" style="margin-top:8px;">
-                <?php esc_html_e( "Don't have a GoHighLevel account?", 'good-connect' ); ?>
-                <a href="https://www.gohighlevel.com/?fp_ref=goodhost" target="_blank" rel="noopener">
-                    <?php esc_html_e( 'Sign up here.', 'good-connect' ); ?>
-                </a>
             </p>
         </div>
 
