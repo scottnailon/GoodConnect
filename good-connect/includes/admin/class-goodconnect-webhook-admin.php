@@ -148,7 +148,14 @@ class GoodConnect_Webhook_Admin {
         foreach ( $raw as $row ) {
             $event  = sanitize_text_field( $row['event_type']  ?? '' );
             $action = sanitize_key(        $row['action_type'] ?? '' );
-            $extra  = sanitize_textarea_field( $row['extra_config'] ?? '' );
+            $extra_raw = sanitize_textarea_field( $row['extra_config'] ?? '' );
+            // Validate JSON if provided — store empty string if invalid.
+            if ( $extra_raw !== '' ) {
+                json_decode( $extra_raw );
+                $extra = ( json_last_error() === JSON_ERROR_NONE ) ? $extra_raw : '';
+            } else {
+                $extra = '';
+            }
             if ( $event && $action ) {
                 $rules[] = [
                     'event_type'   => $event,

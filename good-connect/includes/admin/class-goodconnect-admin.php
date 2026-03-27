@@ -1037,11 +1037,12 @@ class GoodConnect_Admin {
         }
 
         // Normalise — GHL returns varying shapes depending on API version.
+        // Treat API response as untrusted: sanitize all field values.
         $fields = [];
         foreach ( (array) $result as $field ) {
-            $id   = $field['id']       ?? $field['fieldKey'] ?? '';
-            $name = $field['name']     ?? $field['label']    ?? $id;
-            $key  = $field['fieldKey'] ?? $field['id']       ?? '';
+            $id   = sanitize_text_field( $field['id']       ?? $field['fieldKey'] ?? '' );
+            $name = sanitize_text_field( $field['name']     ?? $field['label']    ?? $id );
+            $key  = sanitize_text_field( $field['fieldKey'] ?? $field['id']       ?? '' );
             if ( $id ) {
                 $fields[] = [
                     'id'       => $id,
