@@ -85,7 +85,6 @@ Each magic link token is a 64-character cryptographically random hex string, sto
 1. Settings tab — add and manage multiple GHL accounts
 2. Gravity Forms tab — field mapper, custom fields, tags, and conditions
 3. Webhooks tab — inbound webhook URL and event rules
-4. Activity Log — full history of all API calls and events
 
 == Changelog ==
 
