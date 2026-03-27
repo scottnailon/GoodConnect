@@ -768,10 +768,10 @@ class GoodConnect_Admin {
 
             <div class="goodconnect-card-footer" style="margin-top:16px;">
                 <button type="button" class="button button-primary" id="gc-bulk-sync-start"
-                    <?php echo ( $progress && $progress['status'] === 'running' ) ? 'disabled' : ''; ?>>
+                    <?php echo esc_attr( $progress && $progress['status'] === 'running' ? 'disabled' : '' ); ?>>
                     <?php esc_html_e( 'Start Bulk Sync', 'good-connect' ); ?>
                 </button>
-                <button type="button" class="button" id="gc-bulk-sync-cancel" style="<?php echo ( $progress && $progress['status'] === 'running' ) ? '' : 'display:none'; ?>">
+                <button type="button" class="button" id="gc-bulk-sync-cancel" style="<?php echo esc_attr( $progress && $progress['status'] === 'running' ? '' : 'display:none' ); ?>">
                     <?php esc_html_e( 'Cancel', 'good-connect' ); ?>
                 </button>
                 <span class="goodconnect-save-status" id="gc-bulk-sync-msg"></span>
@@ -986,7 +986,7 @@ class GoodConnect_Admin {
         if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
 
         $options                 = get_option( GoodConnect_Settings::OPTION_KEY, [] );
-        $options['woo_enabled']  = ! empty( $_POST['woo_enabled'] ) ? '1' : '0'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- boolean coerce
+        $options['woo_enabled']  = ! empty( wp_unslash( $_POST['woo_enabled'] ?? '' ) ) ? '1' : '0';
         $options['woo_account_id'] = sanitize_text_field( wp_unslash( $_POST['woo_account_id'] ?? '' ) );
 
         // Trigger statuses.

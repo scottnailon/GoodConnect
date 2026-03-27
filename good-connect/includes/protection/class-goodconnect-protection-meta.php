@@ -63,7 +63,7 @@ class GoodConnect_Protection_Meta {
 
     public static function save_meta( $post_id ) {
         if ( ! isset( $_POST['goodconnect_protection_nonce'] ) ) return;
-        if ( ! wp_verify_nonce( $_POST['goodconnect_protection_nonce'], 'goodconnect_protection_meta' ) ) return;
+        if ( ! wp_verify_nonce( wp_unslash( $_POST['goodconnect_protection_nonce'] ), 'goodconnect_protection_meta' ) ) return;
         if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
         if ( ! current_user_can( 'edit_post', $post_id ) ) return;
 
