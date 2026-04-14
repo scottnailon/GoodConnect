@@ -33,6 +33,10 @@ require_once GOODCONNECT_PLUGIN_DIR . 'includes/core/class-goodconnect-loader.ph
 // GHL API client
 require_once GOODCONNECT_PLUGIN_DIR . 'includes/ghl/class-goodconnect-ghl-client.php';
 
+// Jobber API client + OAuth
+require_once GOODCONNECT_PLUGIN_DIR . 'includes/jobber/class-goodconnect-jobber-client.php';
+require_once GOODCONNECT_PLUGIN_DIR . 'includes/jobber/class-goodconnect-jobber-oauth.php';
+
 // Admin
 require_once GOODCONNECT_PLUGIN_DIR . 'includes/admin/class-goodconnect-log-table.php';
 require_once GOODCONNECT_PLUGIN_DIR . 'includes/admin/class-goodconnect-admin.php';

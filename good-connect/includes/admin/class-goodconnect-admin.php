@@ -159,22 +159,68 @@ class GoodConnect_Admin {
 
     private static function render_settings_tab() {
         $accounts = GoodConnect_Settings::get_accounts();
+
+        // Surface the Jobber OAuth callback notice, if one is present.
+        if ( ! empty( $_GET['gc_jobber_notice'] ) ) {
+            $notice_type = sanitize_key( wp_unslash( $_GET['gc_jobber_notice'] ) ) === 'success' ? 'success' : 'error';
+            $notice_msg  = sanitize_text_field( rawurldecode( wp_unslash( $_GET['gc_jobber_msg'] ?? '' ) ) );
+            if ( $notice_msg ) {
+                printf(
+                    '<div class="notice notice-%1$s is-dismissible"><p>%2$s</p></div>',
+                    esc_attr( $notice_type ),
+                    esc_html( $notice_msg )
+                );
+            }
+        }
         ?>
         <div class="goodconnect-card">
-            <h3 class="goodconnect-card-title"><?php esc_html_e( 'GoHighLevel Accounts', 'good-connect' ); ?></h3>
-            <p class="description"><?php esc_html_e( 'Add one or more GHL sub-accounts. Each form can be configured to send to a specific account.', 'good-connect' ); ?></p>
+            <h3 class="goodconnect-card-title"><?php esc_html_e( 'Accounts', 'good-connect' ); ?></h3>
+            <p class="description"><?php esc_html_e( 'Add one or more accounts. Each form can be configured to send to a specific account. Choose a provider per account (GoHighLevel or Jobber).', 'good-connect' ); ?></p>
 
             <div id="goodconnect-accounts-list">
-                <?php foreach ( $accounts as $account ) : ?>
-                    <div class="goodconnect-account-row" data-id="<?php echo esc_attr( $account['id'] ); ?>">
-                        <input type="text" class="gc-account-label" placeholder="<?php esc_attr_e( 'Account label', 'good-connect' ); ?>" value="<?php echo esc_attr( $account['label'] ); ?>" />
-                        <input type="password" class="gc-account-apikey" placeholder="<?php esc_attr_e( 'API Key', 'good-connect' ); ?>" value="<?php echo esc_attr( $account['api_key'] ); ?>" autocomplete="new-password" />
-                        <input type="text" class="gc-account-locationid" placeholder="<?php esc_attr_e( 'Location ID', 'good-connect' ); ?>" value="<?php echo esc_attr( $account['location_id'] ); ?>" />
-                        <label class="gc-account-default-label">
-                            <input type="radio" name="gc_default_account" class="gc-account-default" value="<?php echo esc_attr( $account['id'] ); ?>" <?php checked( ! empty( $account['is_default'] ) ); ?> />
-                            <?php esc_html_e( 'Default', 'good-connect' ); ?>
-                        </label>
-                        <button type="button" class="button goodconnect-remove-account"><?php esc_html_e( 'Remove', 'good-connect' ); ?></button>
+                <?php foreach ( $accounts as $account ) :
+                    $provider = $account['provider'] ?? 'ghl';
+                    $is_jobber_connected = $provider === 'jobber' && ! empty( $account['jobber_access_token'] );
+                    ?>
+                    <div class="goodconnect-account-row" data-id="<?php echo esc_attr( $account['id'] ); ?>" data-provider="<?php echo esc_attr( $provider ); ?>">
+                        <div class="gc-account-row-main">
+                            <input type="text" class="gc-account-label" placeholder="<?php esc_attr_e( 'Account label', 'good-connect' ); ?>" value="<?php echo esc_attr( $account['label'] ); ?>" />
+                            <select class="gc-account-provider">
+                                <option value="ghl"    <?php selected( $provider, 'ghl' ); ?>>GoHighLevel</option>
+                                <option value="jobber" <?php selected( $provider, 'jobber' ); ?>>Jobber</option>
+                            </select>
+                            <label class="gc-account-default-label">
+                                <input type="radio" name="gc_default_account" class="gc-account-default" value="<?php echo esc_attr( $account['id'] ); ?>" <?php checked( ! empty( $account['is_default'] ) ); ?> />
+                                <?php esc_html_e( 'Default', 'good-connect' ); ?>
+                            </label>
+                            <button type="button" class="button goodconnect-remove-account"><?php esc_html_e( 'Remove', 'good-connect' ); ?></button>
+                        </div>
+                        <div class="gc-account-fields gc-account-fields-ghl" <?php echo $provider === 'ghl' ? '' : 'style="display:none"'; ?>>
+                            <input type="password" class="gc-account-apikey" placeholder="<?php esc_attr_e( 'API Key', 'good-connect' ); ?>" value="<?php echo esc_attr( $account['api_key'] ?? '' ); ?>" autocomplete="new-password" />
+                            <input type="text" class="gc-account-locationid" placeholder="<?php esc_attr_e( 'Location ID', 'good-connect' ); ?>" value="<?php echo esc_attr( $account['location_id'] ?? '' ); ?>" />
+                        </div>
+                        <div class="gc-account-fields gc-account-fields-jobber" <?php echo $provider === 'jobber' ? '' : 'style="display:none"'; ?>>
+                            <input type="text"     class="gc-account-jobber-client-id"     placeholder="<?php esc_attr_e( 'Jobber Client ID', 'good-connect' ); ?>"     value="<?php echo esc_attr( $account['jobber_client_id']     ?? '' ); ?>" />
+                            <input type="password" class="gc-account-jobber-client-secret" placeholder="<?php esc_attr_e( 'Jobber Client Secret', 'good-connect' ); ?>" value="<?php echo esc_attr( $account['jobber_client_secret'] ?? '' ); ?>" autocomplete="new-password" />
+                            <span class="gc-account-jobber-status">
+                                <?php if ( $is_jobber_connected ) : ?>
+                                    <span style="color:#3c8551">&#10004; <?php esc_html_e( 'Connected', 'good-connect' ); ?></span>
+                                <?php else : ?>
+                                    <span style="color:#a00">&#9888; <?php esc_html_e( 'Not connected', 'good-connect' ); ?></span>
+                                <?php endif; ?>
+                            </span>
+                            <?php
+                            $connect_url = wp_nonce_url(
+                                admin_url( 'admin-post.php?action=goodconnect_jobber_connect&account_id=' . rawurlencode( $account['id'] ) ),
+                                'goodconnect_jobber_connect'
+                            );
+                            ?>
+                            <a class="button gc-account-jobber-connect" href="<?php echo esc_url( $connect_url ); ?>">
+                                <?php echo $is_jobber_connected
+                                    ? esc_html__( 'Reconnect to Jobber', 'good-connect' )
+                                    : esc_html__( 'Connect to Jobber', 'good-connect' ); ?>
+                            </a>
+                        </div>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -219,16 +265,45 @@ class GoodConnect_Admin {
             </p>
         </div>
 
+        <div class="goodconnect-card">
+            <h3 class="goodconnect-card-title"><?php esc_html_e( 'How to connect Jobber', 'good-connect' ); ?></h3>
+            <ol style="margin:6px 0 0 18px;line-height:1.9">
+                <li><?php esc_html_e( 'Sign in to the Jobber Developer Center and create a new App.', 'good-connect' ); ?>
+                    <a href="https://developer.getjobber.com/" target="_blank" rel="noopener"><?php esc_html_e( '(developer.getjobber.com)', 'good-connect' ); ?></a>
+                </li>
+                <li><?php esc_html_e( 'For the OAuth redirect URL, paste:', 'good-connect' ); ?>
+                    <code><?php echo esc_html( GoodConnect_Jobber_OAuth::redirect_uri() ); ?></code>
+                </li>
+                <li><?php esc_html_e( 'Enable scopes:', 'good-connect' ); ?>
+                    <code>read_clients</code>, <code>write_clients</code>
+                </li>
+                <li><?php esc_html_e( 'Copy the Client ID and Client Secret, paste them into a Jobber-provider account above, and click "Connect to Jobber".', 'good-connect' ); ?></li>
+            </ol>
+        </div>
+
         <template id="goodconnect-account-row-template">
-            <div class="goodconnect-account-row" data-id="">
-                <input type="text" class="gc-account-label" placeholder="<?php esc_attr_e( 'Account label', 'good-connect' ); ?>" value="" />
-                <input type="password" class="gc-account-apikey" placeholder="<?php esc_attr_e( 'API Key', 'good-connect' ); ?>" value="" autocomplete="new-password" />
-                <input type="text" class="gc-account-locationid" placeholder="<?php esc_attr_e( 'Location ID', 'good-connect' ); ?>" value="" />
-                <label class="gc-account-default-label">
-                    <input type="radio" name="gc_default_account" class="gc-account-default" value="" />
-                    <?php esc_html_e( 'Default', 'good-connect' ); ?>
-                </label>
-                <button type="button" class="button goodconnect-remove-account"><?php esc_html_e( 'Remove', 'good-connect' ); ?></button>
+            <div class="goodconnect-account-row" data-id="" data-provider="ghl">
+                <div class="gc-account-row-main">
+                    <input type="text" class="gc-account-label" placeholder="<?php esc_attr_e( 'Account label', 'good-connect' ); ?>" value="" />
+                    <select class="gc-account-provider">
+                        <option value="ghl" selected>GoHighLevel</option>
+                        <option value="jobber">Jobber</option>
+                    </select>
+                    <label class="gc-account-default-label">
+                        <input type="radio" name="gc_default_account" class="gc-account-default" value="" />
+                        <?php esc_html_e( 'Default', 'good-connect' ); ?>
+                    </label>
+                    <button type="button" class="button goodconnect-remove-account"><?php esc_html_e( 'Remove', 'good-connect' ); ?></button>
+                </div>
+                <div class="gc-account-fields gc-account-fields-ghl">
+                    <input type="password" class="gc-account-apikey" placeholder="<?php esc_attr_e( 'API Key', 'good-connect' ); ?>" value="" autocomplete="new-password" />
+                    <input type="text" class="gc-account-locationid" placeholder="<?php esc_attr_e( 'Location ID', 'good-connect' ); ?>" value="" />
+                </div>
+                <div class="gc-account-fields gc-account-fields-jobber" style="display:none">
+                    <input type="text"     class="gc-account-jobber-client-id"     placeholder="<?php esc_attr_e( 'Jobber Client ID', 'good-connect' ); ?>"     value="" />
+                    <input type="password" class="gc-account-jobber-client-secret" placeholder="<?php esc_attr_e( 'Jobber Client Secret', 'good-connect' ); ?>" value="" autocomplete="new-password" />
+                    <span class="gc-account-jobber-status"><span style="color:#a00">&#9888; <?php esc_html_e( 'Save before connecting', 'good-connect' ); ?></span></span>
+                </div>
             </div>
         </template>
         <?php
@@ -830,6 +905,11 @@ class GoodConnect_Admin {
         if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorised', 403 );
 
         $raw      = wp_unslash( $_POST['accounts'] ?? [] );
+        $existing = [];
+        foreach ( GoodConnect_Settings::get_accounts() as $acc ) {
+            $existing[ $acc['id'] ] = $acc;
+        }
+
         $accounts = [];
         $has_default = false;
 
@@ -840,13 +920,37 @@ class GoodConnect_Admin {
             $is_default = ! empty( $row['is_default'] ) && ! $has_default;
             if ( $is_default ) $has_default = true;
 
-            $accounts[] = [
-                'id'          => $id,
-                'label'       => sanitize_text_field( $row['label']       ?? 'Account' ),
-                'api_key'     => sanitize_text_field( $row['api_key']     ?? '' ),
-                'location_id' => sanitize_text_field( $row['location_id'] ?? '' ),
-                'is_default'  => $is_default,
+            $provider = in_array( $row['provider'] ?? 'ghl', [ 'ghl', 'jobber' ], true ) ? $row['provider'] : 'ghl';
+            $prior    = $existing[ $id ] ?? [];
+
+            $account = [
+                'id'         => $id,
+                'label'      => sanitize_text_field( $row['label'] ?? 'Account' ),
+                'provider'   => $provider,
+                'is_default' => $is_default,
             ];
+
+            if ( $provider === 'ghl' ) {
+                $account['api_key']     = sanitize_text_field( $row['api_key']     ?? '' );
+                $account['location_id'] = sanitize_text_field( $row['location_id'] ?? '' );
+            } else {
+                $account['jobber_client_id']     = sanitize_text_field( $row['jobber_client_id']     ?? '' );
+                $account['jobber_client_secret'] = sanitize_text_field( $row['jobber_client_secret'] ?? '' );
+
+                // Preserve tokens already held on the existing account row — they are set by the OAuth callback, not this form.
+                foreach ( [ 'jobber_access_token', 'jobber_refresh_token', 'jobber_token_expires' ] as $k ) {
+                    if ( isset( $prior[ $k ] ) ) $account[ $k ] = $prior[ $k ];
+                }
+
+                // If the admin changed Client ID/Secret, invalidate stored tokens so the next submission surfaces "reconnect".
+                $id_changed     = isset( $prior['jobber_client_id']     ) && $prior['jobber_client_id']     !== $account['jobber_client_id'];
+                $secret_changed = isset( $prior['jobber_client_secret'] ) && $prior['jobber_client_secret'] !== $account['jobber_client_secret'];
+                if ( $id_changed || $secret_changed ) {
+                    unset( $account['jobber_access_token'], $account['jobber_refresh_token'], $account['jobber_token_expires'] );
+                }
+            }
+
+            $accounts[] = $account;
         }
 
         // Ensure at least one default.

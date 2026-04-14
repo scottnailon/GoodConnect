@@ -45,20 +45,38 @@
         $( this ).closest( '.goodconnect-account-row' ).remove();
     } );
 
+    // Provider toggle — show the matching field set when the provider dropdown changes.
+    $( document ).on( 'change', '.gc-account-provider', function () {
+        var $row = $( this ).closest( '.goodconnect-account-row' );
+        var provider = $( this ).val();
+        $row.attr( 'data-provider', provider );
+        $row.find( '.gc-account-fields-ghl'    ).toggle( provider === 'ghl'    );
+        $row.find( '.gc-account-fields-jobber' ).toggle( provider === 'jobber' );
+    } );
+
     $( '#goodconnect-save-accounts' ).on( 'click', function () {
         var $btn     = $( this );
         var accounts = [];
         var defaultId = $( 'input[name="gc_default_account"]:checked' ).val();
 
         $( '#goodconnect-accounts-list .goodconnect-account-row' ).each( function () {
-            var id = $( this ).data( 'id' ) || '';
-            accounts.push( {
-                id:          id,
-                label:       $( this ).find( '.gc-account-label' ).val().trim(),
-                api_key:     $( this ).find( '.gc-account-apikey' ).val().trim(),
-                location_id: $( this ).find( '.gc-account-locationid' ).val().trim(),
-                is_default:  id === defaultId ? 1 : 0,
-            } );
+            var $row     = $( this );
+            var id       = $row.data( 'id' ) || '';
+            var provider = $row.find( '.gc-account-provider' ).val() || 'ghl';
+            var row = {
+                id:         id,
+                label:      $row.find( '.gc-account-label' ).val().trim(),
+                provider:   provider,
+                is_default: id === defaultId ? 1 : 0,
+            };
+            if ( provider === 'ghl' ) {
+                row.api_key     = $row.find( '.gc-account-apikey' ).val().trim();
+                row.location_id = $row.find( '.gc-account-locationid' ).val().trim();
+            } else {
+                row.jobber_client_id     = $row.find( '.gc-account-jobber-client-id' ).val().trim();
+                row.jobber_client_secret = $row.find( '.gc-account-jobber-client-secret' ).val().trim();
+            }
+            accounts.push( row );
         } );
 
         setBusy( $btn, true, 'Save Accounts' );

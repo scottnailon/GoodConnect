@@ -47,6 +47,7 @@ class GoodConnect_Settings {
                 $accounts = [ [
                     'id'          => 'account_' . substr( md5( $legacy['api_key'] ), 0, 8 ),
                     'label'       => 'Default',
+                    'provider'    => 'ghl',
                     'api_key'     => $legacy['api_key'],
                     'location_id' => $legacy['location_id'] ?? '',
                     'is_default'  => true,
@@ -57,11 +58,41 @@ class GoodConnect_Settings {
             update_option( self::ACCOUNTS_KEY, $accounts );
         }
 
+        // Backfill provider on any legacy accounts that pre-date the Jobber integration.
+        $changed = false;
+        foreach ( $accounts as &$account ) {
+            if ( empty( $account['provider'] ) ) {
+                $account['provider'] = 'ghl';
+                $changed = true;
+            }
+        }
+        unset( $account );
+        if ( $changed ) update_option( self::ACCOUNTS_KEY, $accounts );
+
         return (array) $accounts;
     }
 
     public static function save_accounts( array $accounts ): void {
         update_option( self::ACCOUNTS_KEY, $accounts );
+    }
+
+    /**
+     * Update a single account in place by ID. Merges provided fields over existing.
+     * Used by the Jobber OAuth callback to persist tokens without disturbing other fields.
+     */
+    public static function update_account( string $id, array $fields ): bool {
+        $accounts = self::get_accounts();
+        $found = false;
+        foreach ( $accounts as &$account ) {
+            if ( $account['id'] === $id ) {
+                $account = array_merge( $account, $fields );
+                $found = true;
+                break;
+            }
+        }
+        unset( $account );
+        if ( $found ) self::save_accounts( $accounts );
+        return $found;
     }
 
     public static function get_default_account(): ?array {

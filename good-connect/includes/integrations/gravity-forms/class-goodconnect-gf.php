@@ -71,6 +71,12 @@ class GoodConnect_GF {
 
         if ( empty( $contact ) ) return;
 
+        // Route to Jobber when the configured account uses the Jobber provider.
+        if ( ( $account['provider'] ?? 'ghl' ) === 'jobber' ) {
+            self::send_to_jobber( $account, $contact, $form_id, $form );
+            return;
+        }
+
         $client = new GoodConnect_GHL_Client( $account );
         $result = $client->upsert_contact( $contact );
 
@@ -118,6 +124,42 @@ class GoodConnect_GF {
         }
 
         // Errors are captured in the activity log above.
+    }
+
+    /**
+     * Dispatch a form submission to Jobber's clientCreate mutation.
+     *
+     * Reuses the GHL field-map keys so users don't have to re-map for Jobber.
+     * Mapping: firstName/lastName/email/phone/address1/city/state/postalCode/country.
+     */
+    private static function send_to_jobber( array $account, array $contact, int $form_id, array $form ): void {
+        $jobber_fields = [
+            'first_name'    => $contact['firstName']  ?? '',
+            'last_name'     => $contact['lastName']   ?? '',
+            'email'         => $contact['email']      ?? '',
+            'phone'         => $contact['phone']      ?? '',
+            'address_line1' => $contact['address1']   ?? '',
+            'city'          => $contact['city']       ?? '',
+            'province'      => $contact['state']      ?? '',
+            'postal_code'   => $contact['postalCode'] ?? '',
+            'country'       => $contact['country']    ?? '',
+        ];
+
+        $client = new GoodConnect_Jobber_Client( $account );
+        $result = $client->create_client( $jobber_fields );
+        $success = ! is_wp_error( $result );
+
+        GoodConnect_DB::log( [
+            'source'         => 'gravity-forms',
+            'form_id'        => (string) $form_id,
+            'form_name'      => $form['title'] ?? '',
+            'account_id'     => $account['id'] ?? '',
+            'contact_email'  => $contact['email'] ?? '',
+            'action'         => 'create_jobber_client',
+            'success'        => $success,
+            'ghl_contact_id' => $success ? ( $result['client']['id'] ?? '' ) : '',
+            'error_message'  => $success ? '' : $result->get_error_message(),
+        ] );
     }
 
     private static function resolve_merge_tags( string $template, $entry ): string {

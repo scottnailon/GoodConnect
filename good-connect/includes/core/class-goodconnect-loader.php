@@ -7,6 +7,7 @@ class GoodConnect_Loader {
         GoodConnect_DB::maybe_upgrade();
         GoodConnect_Settings::init();
         GoodConnect_Admin::init();
+        GoodConnect_Jobber_OAuth::init();
         GoodConnect_GF::init();
         GoodConnect_Elementor::init();
         GoodConnect_Woo::init();
