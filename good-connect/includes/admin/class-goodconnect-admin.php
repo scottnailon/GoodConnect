@@ -239,7 +239,7 @@ class GoodConnect_Admin {
             <h3 class="goodconnect-card-title"><?php esc_html_e( 'How to create your API key', 'good-connect' ); ?></h3>
             <p class="description" style="margin-bottom:8px;">
                 <?php esc_html_e( "Don't have a GoHighLevel account?", 'good-connect' ); ?>
-                <a href="https://www.gohighlevel.com/" target="_blank" rel="noopener">
+                <a href="https://www.gohighlevel.com/?fp_ref=goodhost" target="_blank" rel="noopener">
                     <?php esc_html_e( 'Sign up here.', 'good-connect' ); ?>
                 </a>
             </p>
