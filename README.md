@@ -1,8 +1,12 @@
 # GoodConnect
 
-**Route your WordPress form submissions to GoHighLevel or Jobber**
+**Route your WordPress form submissions to [GoHighLevel](https://www.gohighlevel.com/?fp_ref=goodhost) or [Jobber](https://jobber.com)**
 
-GoodConnect bridges your WordPress form plugins to your CRM. Submissions from Gravity Forms, Elementor Pro, Contact Form 7, or WooCommerce are automatically sent to **GoHighLevel** or **Jobber** — creating contacts, clients, requests, and opportunities without any manual data entry.
+GoodConnect bridges your WordPress form plugins to your CRM. Submissions from [Gravity Forms](https://gravityforms.com), [Elementor Pro](https://elementor.com), Contact Form 7, or WooCommerce are automatically sent to **GoHighLevel** or **Jobber** — creating contacts, clients, requests, and opportunities without any manual data entry.
+
+I built this for myself and figured others might find it useful too. No premium tiers, no yearly fees — just a tool that does what it says. If it's saved you some time or money, the best way to say thanks is to check out my Australian Web Hosting business, [GoodHost](https://goodhost.com.au), or come host a site with me. Or write a blog about us on your website and link back to our domain!
+
+**Need a quality website built?** [Sites By Dsign](https://sitesbydesign.com.au) is my other business that can help you!
 
 [![WordPress Plugin Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://goodhost.com.au)
 [![License: GPL v2+](https://img.shields.io/badge/license-GPL%20v2%2B-green.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
@@ -31,10 +35,10 @@ Website Visitor
        |               |
        v               v
 ┌─────────────┐  ┌─────────────┐
-│ GoHighLevel  │  │   Jobber    │
-│ Contact      │  │ Client +    │
-│ Opportunity  │  │ Request     │
-│ Tags         │  │ Property    │
+│ GoHighLevel │  │   Jobber    │
+│ Contact     │  │ Client +    │
+│ Opportunity │  │ Request     │
+│ Tags        │  │ Property    │
 └─────────────┘  └─────────────┘
 ```
 
@@ -82,7 +86,7 @@ Each form can be mapped to a different CRM account. Choose your provider per-acc
 - WordPress 6.0+
 - PHP 8.0+
 - One or more of: [Gravity Forms](https://www.gravityforms.com/), [Elementor Pro](https://elementor.com/pro/), [Contact Form 7](https://wordpress.org/plugins/contact-form-7/), [WooCommerce](https://woocommerce.com/)
-- A [GoHighLevel](https://www.gohighlevel.com/) account and/or a [Jobber](https://getjobber.com/) account
+- A [GoHighLevel](https://www.gohighlevel.com/?fp_ref=goodhost) account and/or a [Jobber](https://getjobber.com/) account
 
 ---
 
