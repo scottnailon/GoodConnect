@@ -1,16 +1,48 @@
 # GoodConnect
 
-**GoHighLevel integration for WordPress — Gravity Forms, Elementor, Contact Form 7, and WooCommerce.**
+**GoHighLevel & Jobber integration for WordPress**
 
-Developed by [GoodHost](https://goodhost.com.au)
+Connect your WordPress forms and WooCommerce store to [GoHighLevel](https://www.gohighlevel.com/) and [Jobber](https://getjobber.com/) CRMs. When a visitor submits a form or places an order, their details are automatically sent to your CRM.
+
+[![WordPress Plugin Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://goodhost.com.au)
+[![License: GPL v2+](https://img.shields.io/badge/license-GPL%20v2%2B-green.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
+[![PHP 8.0+](https://img.shields.io/badge/PHP-8.0%2B-purple.svg)](https://www.php.net/)
+[![WordPress 6.0+](https://img.shields.io/badge/WordPress-6.0%2B-blue.svg)](https://wordpress.org/)
 
 ---
 
-## Overview
+## Features
 
-GoodConnect connects your WordPress site to GoHighLevel (GHL). When a visitor submits a form or places a WooCommerce order, their details are automatically sent to GHL as a contact — with full support for tags, custom fields, conditional logic, opportunity creation, and multiple GHL sub-accounts.
+### Form Integrations
+- **Gravity Forms** — field mapping, custom fields, tags, conditional logic, opportunity/request creation
+- **Elementor Pro** — form field mapping, custom fields, static tags
+- **Contact Form 7** — full field mapper, custom fields, tags, conditional logic
+- **WooCommerce** — sync orders to CRM contacts, configurable trigger statuses, per-product tags
 
-GoodConnect also receives inbound webhooks from GHL to trigger actions in WordPress — create users, assign roles, send magic login links, and gate content by GHL tag.
+### GoHighLevel (GHL)
+- Contact upsert with full field mapping
+- Pipeline opportunity creation
+- Custom field sync (auto-loaded from your GHL account)
+- Static and dynamic tags
+- Inbound webhooks — create users, assign roles, update meta, generate magic login links
+- Tag-based content protection with `[goodconnect_protected]` shortcode
+
+### Jobber
+- OAuth2 connection flow
+- Create clients with full contact details + billing/property address
+- Create Requests linked to clients (appears in Jobber workflow for existing clients)
+- Search existing clients by email (avoids duplicates, enables workflow routing)
+- Auto-add new property if address differs from existing
+- Australian phone number formatting (XXXX XXX XXX)
+- Source URL tracking (records which page the enquiry came from)
+- Write Jobber client/request IDs back to Gravity Forms entry meta
+
+### General
+- **Multi-account** — manage multiple CRM accounts, select per-form
+- **Bulk User Sync** — sync all WordPress users to GHL via WP-Cron batching
+- **Magic Links** — one-time login URLs for passwordless authentication via CRM automations
+- **Content Protection** — gate pages and posts by GHL tag
+- **Activity Log** — every API call and webhook event logged with filters
 
 ---
 
@@ -18,400 +50,96 @@ GoodConnect also receives inbound webhooks from GHL to trigger actions in WordPr
 
 - WordPress 6.0+
 - PHP 8.0+
-- One or more of:
-  - [Gravity Forms](https://www.gravityforms.com/)
-  - [Elementor Pro](https://elementor.com/pro/)
-  - [Contact Form 7](https://wordpress.org/plugins/contact-form-7/)
-  - [WooCommerce](https://woocommerce.com/)
-- A GoHighLevel account with a Private Integration API key
+- One or more of: [Gravity Forms](https://www.gravityforms.com/), [Elementor Pro](https://elementor.com/pro/), [Contact Form 7](https://wordpress.org/plugins/contact-form-7/), [WooCommerce](https://woocommerce.com/)
+- A GoHighLevel account and/or a Jobber account
 
 ---
 
 ## Installation
 
-1. Upload the `good-connect` folder to `/wp-content/plugins/`
-2. Activate via **Plugins → Installed Plugins**
-3. Go to **GoodConnect → Settings** and add your GHL account
+### From zip file
+1. Download the latest release zip from [Releases](../../releases)
+2. In WordPress admin, go to **Plugins → Add New → Upload Plugin**
+3. Upload the zip and activate
+
+### From source
+1. Clone this repo
+2. Copy the `good-connect/` directory to `/wp-content/plugins/`
+3. Activate via **Plugins → Installed Plugins**
 
 ---
 
 ## Configuration
 
-### 1. Add a GHL Account
-
-Navigate to **GoodConnect → Settings**.
-
-Click **+ Add Account** and fill in:
-
-| Field | Where to find it |
-|-------|-----------------|
-| **Label** | Any name you choose (e.g. "Main Business") |
-| **API Key** | GHL → Settings → Private Integrations → Create private integration |
-| **Location ID** | GHL → Settings → Business Profile (shown at the bottom of the page) |
-
-**Required API scopes:**
-
-| Scope | Purpose |
-|-------|---------|
-| `contacts.readonly` | Look up existing contacts |
-| `contacts.write` | Create and update contacts |
-| `locations/customFields.readonly` | Load custom fields via **Load from GHL** |
-| `opportunities.readonly` | Look up opportunities *(optional)* |
-| `opportunities.write` | Create opportunities *(optional)* |
-
-You can add multiple accounts (e.g. one per GHL sub-account). Mark one as **Default** — it will be used by any form that does not have a specific account selected.
-
-> Don't have a GoHighLevel account? [Sign up here.](https://www.gohighlevel.com/?fp_ref=goodhost)
-
-Click **Save Accounts**.
-
----
-
-### 2. Gravity Forms
-
-Go to **GoodConnect → Gravity Forms**.
-
-Select a form from the dropdown. The following settings appear:
-
-#### GHL Account
-Choose which GHL sub-account this form sends to. Leave blank to use the default account.
-
-#### Field Mapper
-Map each GHL contact field to a Gravity Forms field.
-
-- Name fields are automatically expanded into subfields (First Name, Last Name, Prefix etc.) for precise mapping.
-- Leave a GHL field set to *— Not mapped —* to skip it.
-
-#### Custom Fields
-Map additional GHL custom fields beyond the standard contact fields.
-
-Click **Load from GHL** to automatically populate a dropdown of all custom fields from your GHL account — no manual key entry needed. The dropdown is populated per-account, so if you use multiple sub-accounts, the correct fields load for whichever account is selected.
-
-- **GHL field** — select from the loaded dropdown, or add a row first then click Load from GHL
-- **Gravity Forms field** — the form field whose value will be sent
-
-Click **+ Add Custom Field** to add more rows.
-
-> The **Load from GHL** button is available on Gravity Forms, Elementor, and Contact Form 7 tabs. Results are cached per-account for the page session.
-
-#### Static Tags
-Enter a comma-separated list of tags to apply to every GHL contact created from this form.
-
-Example: `webinar-lead, Q1-2026, wordpress`
-
-#### Dynamic Tags
-Select a form field whose submitted value will be added as a tag on the GHL contact.
-
-Example: if a "Service Interest" dropdown has the value `SEO`, the contact will be tagged `SEO`.
-
-Click **+ Add Dynamic Tag Field** to map multiple fields.
-
-#### Conditional Logic
-Control whether GHL receives a submission based on form field values.
-
-- Enable the **Conditions** toggle to activate
-- Choose **All (AND)** or **Any (OR)** to control how rules combine
-- Add rules: select a field, a comparison operator, and a value
-- Supported operators: equals, not equals, contains, does not contain, starts with, ends with, is empty, is not empty
-- If conditions do not pass, the submission is skipped and logged as `skipped_conditions`
-
-#### Opportunity Creation
-Create a GHL pipeline opportunity when a form is submitted.
-
-- **Enable** — toggle on to activate
-- **Pipeline** — paste your GHL pipeline ID
-- **Stage** — paste your GHL pipeline stage ID
-- **Opportunity title** — supports merge tags using `{field_id}` syntax (e.g. `{3}` for field 3)
-- **Value** — static dollar amount, or map to a form field
-
-#### Saving
-Click **Save Mapping** to save all settings for the selected form.
-
----
-
-### 3. Elementor
-
-Go to **GoodConnect → Elementor**.
-
-Click **+ Add Form** and fill in:
-
-- **Form name** — must match the form name set in the Elementor form widget exactly (case-sensitive)
-- **GHL Account** — which sub-account to send to
-- **Field mapper** — enter the Elementor field ID (set in the widget's Advanced tab) next to each GHL field
-- **Custom Fields** — click **Load from GHL** to get a dropdown of GHL custom fields, then enter the Elementor field ID next to each
-- **Static Tags** — comma-separated tags applied to every contact from this form
-
-Click **Save Mapping** to save.
-
-> **Finding field IDs in Elementor:** edit your form widget → click a field → Advanced tab → the ID field shows the value to use here.
-
----
-
-### 4. Contact Form 7
-
-Go to **GoodConnect → Contact Form 7**.
-
-All CF7 forms are listed automatically. For each form:
-
-- **GHL Account** — which sub-account to send to
-- **Field mapper** — enter the CF7 field name (e.g. `your-email`) next to each GHL contact field
-- **Custom Fields** — click **Load from GHL** to get a dropdown of GHL custom fields, then enter the CF7 field name next to each
-- **Static Tags** — comma-separated tags applied to every contact from this form
-
-Click **Save Mapping** to save.
-
-> **Finding CF7 field names:** in the CF7 form editor, field names are the text inside the shortcode brackets, e.g. `[text* your-name]` → field name is `your-name`.
-
----
-
-### 5. WooCommerce
-
-Go to **GoodConnect → WooCommerce**.
-
-Enable the toggle and select which GHL account to use.
-
-#### Trigger Statuses
-By default the contact is sent when an order reaches `processing`. You can configure additional statuses (e.g. `completed`, `on-hold`).
-
-#### Fields sent to GHL
-- First Name, Last Name, Email, Phone
-- Address, City, State, Postal Code, Country
-- Source: `WooCommerce`
-- Tags: `woocommerce-customer` + `woo-{status}` (e.g. `woo-processing`)
-
-#### Per-Product Tags
-Assign additional GHL tags based on which product was purchased. Configure product tag mappings in the WooCommerce settings section.
-
-Click **Save**.
-
----
-
-### 6. Bulk Sync
-
-Go to **GoodConnect → Bulk Sync**.
-
-Sync all existing WordPress users to GHL as contacts in one operation.
-
-- Select the GHL account to sync to
-- Click **Start Bulk Sync** — processes 20 users per WP-Cron run with 100ms spacing to respect GHL rate limits
-- A progress indicator shows status, processed count, and error count in real time
-- Click **Cancel** to stop mid-run
-- Each user is sent with tags: `wordpress-user`
-- Completed runs are logged to the Activity Log
-
----
-
-### 7. Webhooks (Inbound)
-
-Go to **GoodConnect → Webhooks**.
-
-#### Webhook URL
-Copy the displayed URL and paste it into GoHighLevel → Automations → Webhook action. The URL contains a secret token for authentication.
-
-Click **Regenerate Secret** to rotate the token (the old URL will stop working immediately).
-
-> Your site must use HTTPS in production. A warning is shown if SSL is not active.
-
-#### Event Rules
-Configure what GoodConnect does when GHL sends a webhook event.
-
-| Field | Description |
-|-------|-------------|
-| **When GHL sends event** | The event type string from GHL (e.g. `ContactCreated`, `OpportunityStatusChanged`) |
-| **Do this action** | What to do in WordPress |
-| **Extra config (JSON)** | Optional configuration for the action (see below) |
-
-**Available actions:**
-
-| Action | What it does | Extra config example |
-|--------|-------------|----------------------|
-| `generate_magic_link` | Generate a one-time login link for the user and return it to GHL | *(none)* |
-| `create_wp_user` | Create a WordPress user from the GHL contact | `{"role":"subscriber","on_exists":"skip","send_welcome_email":true}` |
-| `update_user_meta` | Update a user meta field | `{"meta_key":"membership_level","payload_field":"customField1"}` |
-| `add_user_role` | Add a role to an existing WordPress user | `{"role":"customer"}` |
-| `remove_user_role` | Remove a role from an existing WordPress user | `{"role":"subscriber"}` |
-
-#### Allowed Roles
-Select which roles may be assigned or removed via webhook. Administrator and Editor are always excluded for security.
-
----
-
-### 8. Magic Links
-
-Magic links are generated via webhook events (see above) and allow GHL automations to send a one-time login link to a WordPress user.
-
-- Links are single-use and expire after 24 hours by default
-- Expiry is configurable via the `goodconnect_magic_link_ttl` option (seconds)
-- Expired and used tokens are cleaned up daily via WP-Cron
-- Login URL format: `https://yoursite.com/?gc_magic=<token>`
-
----
-
-### 9. User Provisioning
-
-When GHL sends a `create_wp_user` webhook event, GoodConnect can automatically create a WordPress user account:
-
-- **Email** is required — taken from the GHL payload
-- **Login** is generated from the email address (de-duplicated automatically)
-- **Password** is auto-generated and emailed to the user
-- **Role** is set from the rule config (must be in the Allowed Roles list)
-- **On existing user:** `skip` (default) leaves the account unchanged; `update` updates the name fields
-- **Welcome email:** set `"send_welcome_email": true` to send a custom email with `{first_name}`, `{email}`, `{password}`, `{site_name}`, `{login_url}` placeholders
-- **GHL sync-back:** set `"ghl_wp_user_id_field": "<custom_field_id>"` to write the new WordPress user ID back to GHL as a custom field
-
----
-
-### 10. Content Protection
-
-GoodConnect can restrict access to pages and posts based on the visitor's GHL tags.
-
-#### How it works
-1. When a visitor submits a GoodConnect-integrated form, their GHL contact ID is stored in a browser cookie
-2. When they visit a protected page, GoodConnect looks up their tags from GHL (cached for 5 minutes)
-3. If they have the required tags, access is granted. If not, the configured denied action is triggered.
-
-#### Protecting a page or post
-Edit any post or page. In the sidebar, find the **GoodConnect — Content Protection** meta box:
-
-- **Required GHL Tags** — comma-separated list of tags the visitor must have (e.g. `member, vip`)
-- **If access denied** — choose:
-  - **Redirect to page** — send to the configured denied page (set in GoodConnect → Webhooks → Allowed Roles)
-  - **Show message** — display a custom access denied message
-  - **Show 403 error** — show a standard WordPress 403 page
-
-Leave Required GHL Tags blank to remove protection from that post/page.
-
-#### Shortcode
-Use `[goodconnect_protected]` to protect inline content within a page:
-
-```
-[goodconnect_protected tags="member, vip" action="hide"]
-  This content is only visible to members and VIPs.
-[/goodconnect_protected]
-```
-
-| Attribute | Values | Default | Description |
-|-----------|--------|---------|-------------|
-| `tags` | comma-separated | *(required)* | Tags the visitor must have |
-| `action` | `hide` / `message` | `hide` | What to show non-matching visitors |
-| `message` | any text | *(default message)* | Message shown when `action="message"` |
-
----
-
-### 11. Activity Log
-
-Go to **GoodConnect → Activity Log** to view a record of every GHL API call and webhook event.
-
-| Column | Description |
+### GoHighLevel
+1. Go to **GoodConnect → Settings**
+2. Click **+ Add Account**, select **GoHighLevel** as the provider
+3. Enter your API Key and Location ID (from GHL → Settings → Private Integrations)
+4. Click **Save Accounts**
+5. Go to the relevant form tab and configure field mappings
+
+### Jobber
+1. Go to **GoodConnect → Settings**
+2. Click **+ Add Account**, select **Jobber** as the provider
+3. Sign in to the [Jobber Developer Center](https://developer.getjobber.com/) and create a new App
+4. Set the OAuth Callback URL to the URL shown in the plugin settings
+5. Enable scopes: `read_clients`, `write_clients`, `read_requests`, `write_requests`
+6. Copy the Client ID and Client Secret into the account fields, click **Save Accounts**
+7. Click **Connect to Jobber** and authorise
+8. Enable the **Jobber Behaviour** options you need:
+
+| Option | Description |
 |--------|-------------|
-| Date / Time | When the event was processed |
-| Source | Gravity Forms, Elementor, Contact Form 7, WooCommerce, Webhook, Bulk Sync |
-| Form | Form name / order number / event type |
-| Account | Which GHL account was used |
-| Email | Contact email address |
-| Action | API action performed (e.g. `upsert_contact`, `create_opportunity`, `magic_link_login`) |
-| Status | ✓ Success or ✗ Failed (hover for error details) |
-| GHL Contact ID | The GHL contact ID returned on success |
-
-Use the **Source** and **Status** filters to narrow results. Click **Clear Log** to wipe all entries.
+| Create a Request | Creates a Jobber Request for each form submission |
+| Search existing clients | Finds existing clients by email before creating (enables workflow routing) |
+| Add new property | Adds a new property if the submitted address differs from existing |
+| Format AU phone | Formats phone numbers as XXXX XXX XXX |
+| Track source URL | Records which page the form was submitted from |
 
 ---
 
-## How Tags Work
+## Jobber API Notes
 
-Tags sent to GHL via the `/contacts/upsert` endpoint are **additive** — they are added to any existing tags on the contact. Tags are never removed by GoodConnect (except via explicit `remove_user_role` webhook actions which affect WordPress roles, not GHL tags).
+Jobber's API creates all new clients as **Leads** (since September 2024). Requests linked to lead clients appear under Clients → Leads rather than in the Workflow → Requests section.
 
-Both static and dynamic tags from a single form are merged and de-duplicated before being sent.
+When **Search existing clients** is enabled and a returning customer submits a form, their existing (non-lead) client record is used and the request appears correctly in the Workflow.
 
----
-
-## Multi-Account Support
-
-Each form (Gravity Forms, Elementor, Contact Form 7) and WooCommerce can be configured to send to a different GHL sub-account. If no specific account is selected, the **Default** account is used.
-
-Accounts are identified internally by a stable ID so renaming a label or rotating an API key does not break any saved form mappings.
+This is a Jobber platform limitation — not something the plugin can work around for first-time enquiries.
 
 ---
 
-## Data Stored
+## Building a Release
 
-GoodConnect stores the following in the WordPress database:
+```bash
+./build.sh
+```
 
-| Option / Table | Contents |
-|---------------|----------|
-| `goodconnect_accounts` | GHL account credentials |
-| `goodconnect_settings` | WooCommerce enable/account/trigger settings |
-| `goodconnect_gf_configs` | Per-form field mappings for Gravity Forms |
-| `goodconnect_elementor_configs` | Per-form field mappings for Elementor |
-| `goodconnect_cf7_configs` | Per-form field mappings for Contact Form 7 |
-| `goodconnect_webhook_rules` | Inbound webhook event rules |
-| `goodconnect_webhook_secret` | Inbound webhook secret token |
-| `goodconnect_allowed_roles` | Roles assignable via webhook |
-| `goodconnect_protection_denied_page` | Page ID for access-denied redirects |
-| `wp_goodconnect_activity_log` | API call and webhook activity log |
+Creates `good-connect-{version}.zip` ready for distribution or WordPress.org submission.
 
-All data is removed when the plugin is uninstalled via **Plugins → Delete**.
+---
+
+## External Services
+
+This plugin connects to third-party services to function:
+
+**GoHighLevel** — Contact and opportunity data is sent to GHL's API.
+- API: `https://services.leadconnectorhq.com`
+- [Terms of Service](https://www.gohighlevel.com/terms-of-service) | [Privacy Policy](https://www.gohighlevel.com/privacy-policy)
+
+**Jobber** — Client and request data is sent to Jobber's GraphQL API.
+- API: `https://api.getjobber.com/api/graphql`
+- [Terms of Service](https://getjobber.com/terms-of-service/) | [Privacy Policy](https://getjobber.com/privacy-policy/)
 
 ---
 
 ## Changelog
 
-### 1.2.3
-- Gravity Forms — Conditions UI now visible and functional in the admin tab
-- Gravity Forms — Opportunity creation UI (pipeline, stage, title, value) now available in admin tab
-- Elementor & CF7 — Opportunity creation UI added to all form cards
-- WooCommerce — Trigger statuses and per-product tags UI now configurable in admin
-- Load from GHL — existing saved custom field rows now replaced with populated dropdowns on all tabs
-- Protection meta box JS now correctly enqueued on post/page edit screens
-- Settings tab — GHL affiliate link added below API key instructions
+See [readme.txt](good-connect/readme.txt) for the full changelog.
 
-### 1.2.2
-- Fixed **Load from GHL** — GET requests no longer send a body, resolving request failures on some server configs
-- Fixed **Load from GHL** — fields now appear immediately after loading even when no custom field rows exist yet
-- Fixed **+ Add Custom Field** — new rows now show the GHL field dropdown (not a blank text input) after Load from GHL has been run
-- Added `locations/customFields.readonly` scope to required API key instructions — this scope is required for Load from GHL
-- WordPress.org submission preparation — output escaping, wp_unslash, inline JS moved to admin.js, silence files, readme.txt, LICENSE
+---
 
-### 1.2.1
-- GHL Custom Fields sync — **Load from GHL** button on Gravity Forms, Elementor, and Contact Form 7 tabs
-- Fetches all custom field names/keys from `GET /locations/{id}/customFields` for the selected account
-- Replaces manual key entry with a dropdown populated on demand
-- Results cached per-account for the page session (no repeated API calls)
-- Elementor and CF7 tabs now have a full custom field mapping UI (was backend-only)
-- Backwards compatible — existing manually-entered keys continue to work
+## License
 
-### 1.2.0
-- **Contact Form 7** integration — field mapper, account selector, static tags, custom fields, conditional logic, opportunity creation
-- **Conditional logic engine** — AND/OR rules with 8 operators applied to GF, Elementor, and CF7 submissions
-- **Opportunity creation** — GF, Elementor, and CF7 can create GHL pipeline opportunities on submission with merge tag support in titles
-- **WooCommerce enhancements** — configurable trigger statuses, per-product tags, dedup guard per status
-- **Bulk User Sync** — sync all WordPress users to GHL via WP-Cron batching, with live progress in the admin
-- **Inbound webhook receiver** — REST endpoint for GHL automation webhooks with secret token authentication
-- **Webhook event rules** — configurable actions: generate magic links, create WP users, update user meta, add/remove roles
-- **Magic links** — single-use tokenised login URLs with configurable TTL and daily cleanup
-- **User provisioning** — create/update WP users from GHL webhook payloads, optional welcome email, sync WP user ID back to GHL
-- **GHL tag-based content protection** — protect pages/posts by GHL tag, cookie-based contact ID, 5-minute tag cache
-- **`[goodconnect_protected]` shortcode** — inline content gating by GHL tag
-- **Content protection meta box** — per-post/page required tags with redirect/message/403 options
-- **Webhooks admin tab** — manage webhook URL, event rules, and allowed roles
-- **Bulk Sync admin tab** — start/cancel/monitor bulk sync with real-time progress polling
-- **Activity Log** — now covers all sources including webhooks, magic links, user provisioning, and bulk sync
+GPL-2.0-or-later — see [LICENSE](good-connect/LICENSE) for details.
 
-### 1.1.0
-- Multi-account support — manage multiple GHL sub-accounts, select per form
-- Static tags — comma-separated tags applied to every contact from a form
-- Dynamic tags — map a form field value as a GHL tag on submission
-- Custom field mapping — add rows for GHL custom field keys
-- Name subfield support — GF name fields expanded to first/last/prefix subfields
-- Activity log — every API call logged to a dedicated DB table
-- Activity Log tab — filterable list table with Clear Log button
-- WooCommerce account selector and logging
-- Elementor account selector and static tags
-
-### 1.0.0
-- Initial release
-- Gravity Forms → GHL contact upsert with field mapper
-- Elementor Pro → GHL contact upsert with field mapper
-- WooCommerce order → GHL contact upsert
-- Settings page with API key and Location ID
-- Tabbed admin UI
+Developed by [GoodHost](https://goodhost.com.au)
