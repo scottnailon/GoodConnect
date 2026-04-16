@@ -8,6 +8,8 @@ I built this for myself and figured others might find it useful too. No premium 
 
 **Need a quality website built?** [Sites By Dsign](https://sitesbydesign.com.au) is my other business that can help you!
 
+### → → [Download Wordpress Plugin Here](https://github.com/scottnailon/GoodConnect/releases) ← ←
+
 [![WordPress Plugin Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://goodhost.com.au)
 [![License: GPL v2+](https://img.shields.io/badge/license-GPL%20v2%2B-green.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 [![PHP 8.0+](https://img.shields.io/badge/PHP-8.0%2B-purple.svg)](https://www.php.net/)
