@@ -275,9 +275,10 @@ class GoodConnect_Admin {
                     <code><?php echo esc_html( GoodConnect_Jobber_OAuth::redirect_uri() ); ?></code>
                 </li>
                 <li><?php esc_html_e( 'Enable scopes:', 'good-connect' ); ?>
-                    <code>read_clients</code>, <code>write_clients</code>
+                    <code>read_clients</code>, <code>write_clients</code>, <code>read_requests</code>, <code>write_requests</code>
                 </li>
-                <li><?php esc_html_e( 'Copy the Client ID and Client Secret, paste them into a Jobber-provider account above, and click "Connect to Jobber".', 'good-connect' ); ?></li>
+                <li><?php esc_html_e( 'Copy the Client ID and Client Secret, paste them into a Jobber-provider account above, save, then click "Connect to Jobber".', 'good-connect' ); ?></li>
+                <li><?php esc_html_e( 'Once connected, enable the Jobber Behaviour options you need (e.g. Create Request, Search Existing Clients) and save again.', 'good-connect' ); ?></li>
             </ol>
         </div>
 
