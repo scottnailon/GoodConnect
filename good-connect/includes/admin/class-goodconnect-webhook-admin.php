@@ -189,7 +189,7 @@ class GoodConnect_Webhook_Admin {
 
         // Denied page.
         if ( isset( $_POST['denied_page_id'] ) ) {
-            update_option( 'goodconnect_protection_denied_page', absint( wp_unslash( $_POST['denied_page_id'] ) ) );
+            update_option( 'goodconnect_protection_denied_page', absint( sanitize_text_field( wp_unslash( $_POST['denied_page_id'] ) ) ) );
         }
 
         wp_send_json_success();

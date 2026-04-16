@@ -62,7 +62,7 @@ class GoodConnect_Magic_Link {
     public static function maybe_consume_token(): void {
         if ( ! isset( $_GET[ self::QUERY_VAR ] ) ) return;
 
-        $raw_token = wp_unslash( $_GET[ self::QUERY_VAR ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        $raw_token = sanitize_text_field( wp_unslash( $_GET[ self::QUERY_VAR ] ) );
 
         // Validate format: exactly 64 hex chars.
         if ( ! preg_match( '/^[a-f0-9]{64}$/', $raw_token ) ) {
