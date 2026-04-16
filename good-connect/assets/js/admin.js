@@ -75,6 +75,10 @@
             } else {
                 row.jobber_client_id     = $row.find( '.gc-account-jobber-client-id' ).val().trim();
                 row.jobber_client_secret = $row.find( '.gc-account-jobber-client-secret' ).val().trim();
+                // Collect Jobber behaviour checkboxes.
+                $row.find( '.gc-account-jobber-opt' ).each( function () {
+                    row[ $( this ).data( 'key' ) ] = $( this ).is( ':checked' ) ? 1 : 0;
+                } );
             }
             accounts.push( row );
         } );
@@ -228,7 +232,7 @@
                 ghlCustomFieldsCache[ cacheKey ] = res.data;
                 callback( res.data );
             } else {
-                alert( ( res.data && typeof res.data === 'string' ? res.data : 'Could not load GHL custom fields. Check your API key and Location ID.' ) );
+                alert( ( res.data && typeof res.data === 'string' ? res.data : 'Could not load custom fields. Check your API key and Location ID.' ) );
             }
         } )
         .fail( function ( xhr ) {
@@ -242,7 +246,7 @@
      */
     function makeGHLFieldSelect( ghlFields, selectedId ) {
         var $sel = $( '<select>' ).addClass( 'gc-custom-ghl-key-select' );
-        $sel.append( $( '<option>' ).val( '' ).text( '— Select GHL field —' ) );
+        $sel.append( $( '<option>' ).val( '' ).text( '— Select field —' ) );
         $.each( ghlFields, function ( i, f ) {
             var val = f.id || f.fieldKey || '';
             $sel.append(
@@ -272,7 +276,7 @@
             $row.append( makeGHLFieldSelect( ghlFields, ghlKey ) );
         } else {
             // Fallback to text input when GHL fields haven't been loaded yet.
-            $row.append( $( '<input type="text">' ).addClass( 'gc-custom-ghl-key' ).attr( 'placeholder', 'GHL field key' ).val( ghlKey || '' ) );
+            $row.append( $( '<input type="text">' ).addClass( 'gc-custom-ghl-key' ).attr( 'placeholder', 'Field key' ).val( ghlKey || '' ) );
         }
         $row.append( makeFieldSelect( fields, gfFieldId, 'gc-custom-gf-field', '' ) );
         $row.append( $( '<button type="button">' ).addClass( 'button goodconnect-remove-custom-field' ).text( '\u2715' ) );
@@ -466,7 +470,7 @@
         if ( ghlFields.length ) {
             $row.append( makeGHLFieldSelect( ghlFields, '' ) );
         } else {
-            $row.append( $( '<input type="text">' ).addClass( 'gc-custom-ghl-key' ).attr( 'placeholder', 'GHL field key' ).val( '' ) );
+            $row.append( $( '<input type="text">' ).addClass( 'gc-custom-ghl-key' ).attr( 'placeholder', 'Field key' ).val( '' ) );
         }
         $row.append( $( '<input type="text">' ).addClass( 'gc-custom-elementor-field' ).attr( 'placeholder', 'Elementor field ID' ) );
         $row.append( $( '<button type="button">' ).addClass( 'button goodconnect-remove-custom-field' ).text( '\u2715' ) );
@@ -486,7 +490,7 @@
         if ( ghlFields.length ) {
             $row.append( makeGHLFieldSelect( ghlFields, '' ) );
         } else {
-            $row.append( $( '<input type="text">' ).addClass( 'gc-custom-ghl-key' ).attr( 'placeholder', 'GHL field key' ).val( '' ) );
+            $row.append( $( '<input type="text">' ).addClass( 'gc-custom-ghl-key' ).attr( 'placeholder', 'Field key' ).val( '' ) );
         }
         $row.append( $( '<input type="text">' ).addClass( 'gc-custom-cf7-field' ).attr( 'placeholder', 'CF7 field name' ) );
         $row.append( $( '<button type="button">' ).addClass( 'button goodconnect-remove-custom-field' ).text( '\u2715' ) );

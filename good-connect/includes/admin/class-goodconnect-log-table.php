@@ -24,7 +24,7 @@ class GoodConnect_Log_Table extends WP_List_Table {
             'contact_email'  => __( 'Email', 'good-connect' ),
             'action'         => __( 'Action', 'good-connect' ),
             'success'        => __( 'Status', 'good-connect' ),
-            'ghl_contact_id' => __( 'GHL Contact ID', 'good-connect' ),
+            'ghl_contact_id' => __( 'Contact ID', 'good-connect' ),
         ];
     }
 

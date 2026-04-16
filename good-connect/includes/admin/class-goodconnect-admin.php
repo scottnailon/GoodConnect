@@ -125,7 +125,7 @@ class GoodConnect_Admin {
             <h1 class="goodconnect-title">
                 <span class="goodconnect-logo">&#9654;</span>
                 <?php esc_html_e( 'GoodConnect', 'good-connect' ); ?>
-                <span class="goodconnect-tagline"><?php esc_html_e( 'GoHighLevel Integration', 'good-connect' ); ?></span>
+                <span class="goodconnect-tagline"><?php esc_html_e( 'GoHighLevel & Jobber Integration', 'good-connect' ); ?></span>
             </h1>
             <nav class="nav-tab-wrapper goodconnect-tabs">
                 <?php foreach ( $tabs as $slug => $label ) : ?>
@@ -251,7 +251,7 @@ class GoodConnect_Admin {
                     <ul style="margin:4px 0 4px 18px;list-style:disc">
                         <li><code>contacts.readonly</code> &mdash; <?php esc_html_e( 'look up existing contacts', 'good-connect' ); ?></li>
                         <li><code>contacts.write</code> &mdash; <?php esc_html_e( 'create and update contacts', 'good-connect' ); ?></li>
-                        <li><code>locations/customFields.readonly</code> &mdash; <?php esc_html_e( 'load custom fields via "Load from GHL"', 'good-connect' ); ?></li>
+                        <li><code>locations/customFields.readonly</code> &mdash; <?php esc_html_e( 'load custom fields via "Load Fields"', 'good-connect' ); ?></li>
                         <li><code>opportunities.readonly</code> &mdash; <?php esc_html_e( 'look up opportunities (optional)', 'good-connect' ); ?></li>
                         <li><code>opportunities.write</code> &mdash; <?php esc_html_e( 'create opportunities (optional)', 'good-connect' ); ?></li>
                     </ul>
@@ -338,7 +338,7 @@ class GoodConnect_Admin {
                 <h3 class="goodconnect-card-title" id="goodconnect-gf-form-title"></h3>
 
                 <div class="goodconnect-section">
-                    <label class="goodconnect-section-label"><?php esc_html_e( 'GHL Account', 'good-connect' ); ?></label>
+                    <label class="goodconnect-section-label"><?php esc_html_e( 'Account', 'good-connect' ); ?></label>
                     <select id="goodconnect-gf-account">
                         <option value=""><?php esc_html_e( '— Use default account —', 'good-connect' ); ?></option>
                     </select>
@@ -346,38 +346,38 @@ class GoodConnect_Admin {
 
                 <div class="goodconnect-mapper" id="goodconnect-gf-mapper">
                     <div class="goodconnect-mapper-header">
-                        <span><?php esc_html_e( 'GHL Field', 'good-connect' ); ?></span>
+                        <span><?php esc_html_e( 'CRM Field', 'good-connect' ); ?></span>
                         <span><?php esc_html_e( 'Gravity Forms Field', 'good-connect' ); ?></span>
                     </div>
                 </div>
 
                 <div class="goodconnect-section" id="goodconnect-gf-custom-fields-wrap">
                     <label class="goodconnect-section-label"><?php esc_html_e( 'Custom Fields', 'good-connect' ); ?></label>
-                    <p class="description"><?php esc_html_e( 'Map GHL custom fields to form fields. Use "Load from GHL" to populate the dropdown with your account\'s custom fields.', 'good-connect' ); ?></p>
+                    <p class="description"><?php esc_html_e( 'Map GHL custom fields to form fields. Use "Load Fields" to populate the dropdown with your account\'s custom fields.', 'good-connect' ); ?></p>
                     <div id="goodconnect-gf-custom-fields"></div>
                     <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
                         <button type="button" class="button goodconnect-add-custom-field">+ <?php esc_html_e( 'Add Custom Field', 'good-connect' ); ?></button>
-                        <button type="button" class="button goodconnect-load-ghl-fields" data-target="gf"><?php esc_html_e( 'Load from GHL', 'good-connect' ); ?></button>
+                        <button type="button" class="button goodconnect-load-ghl-fields" data-target="gf"><?php esc_html_e( 'Load Fields', 'good-connect' ); ?></button>
                         <span class="goodconnect-ghl-fields-status" style="font-size:13px;color:#666;"></span>
                     </div>
                 </div>
 
                 <div class="goodconnect-section">
                     <label class="goodconnect-section-label"><?php esc_html_e( 'Static Tags', 'good-connect' ); ?></label>
-                    <p class="description"><?php esc_html_e( 'These tags are added to every GHL contact from this form. Comma-separated.', 'good-connect' ); ?></p>
+                    <p class="description"><?php esc_html_e( 'These tags are added to every contact from this form. Comma-separated.', 'good-connect' ); ?></p>
                     <input type="text" id="goodconnect-gf-static-tags" class="regular-text" placeholder="e.g. webinar-lead, Q1-2026" />
                 </div>
 
                 <div class="goodconnect-section">
                     <label class="goodconnect-section-label"><?php esc_html_e( 'Dynamic Tags', 'good-connect' ); ?></label>
-                    <p class="description"><?php esc_html_e( 'The value of the selected field will be added as a tag on the GHL contact.', 'good-connect' ); ?></p>
+                    <p class="description"><?php esc_html_e( 'The value of the selected field will be added as a tag on the contact.', 'good-connect' ); ?></p>
                     <div id="goodconnect-gf-dynamic-tags"></div>
                     <button type="button" class="button goodconnect-add-dynamic-tag" style="margin-top:8px;">+ <?php esc_html_e( 'Add Dynamic Tag Field', 'good-connect' ); ?></button>
                 </div>
 
                 <div class="goodconnect-section" id="goodconnect-gf-conditions-wrap">
                     <label class="goodconnect-section-label"><?php esc_html_e( 'Conditional Logic', 'good-connect' ); ?></label>
-                    <p class="description"><?php esc_html_e( 'Only send to GHL if these conditions pass. Leave disabled to always send.', 'good-connect' ); ?></p>
+                    <p class="description"><?php esc_html_e( 'Only send if these conditions pass. Leave disabled to always send.', 'good-connect' ); ?></p>
                     <label class="goodconnect-toggle" style="margin-bottom:8px;">
                         <input type="checkbox" id="goodconnect-gf-conditions-enabled" />
                         <?php esc_html_e( 'Enable conditions', 'good-connect' ); ?>
@@ -402,7 +402,7 @@ class GoodConnect_Admin {
 
                 <div class="goodconnect-section" id="goodconnect-gf-opportunity-wrap">
                     <label class="goodconnect-section-label"><?php esc_html_e( 'Opportunity Creation', 'good-connect' ); ?></label>
-                    <p class="description"><?php esc_html_e( 'Create a GHL pipeline opportunity when this form is submitted.', 'good-connect' ); ?></p>
+                    <p class="description"><?php esc_html_e( 'Create a pipeline opportunity when this form is submitted.', 'good-connect' ); ?></p>
                     <label class="goodconnect-toggle" style="margin-bottom:8px;">
                         <input type="checkbox" id="goodconnect-gf-opp-enabled" />
                         <?php esc_html_e( 'Enable opportunity creation', 'good-connect' ); ?>
@@ -452,7 +452,7 @@ class GoodConnect_Admin {
         $all_configs = get_option( 'goodconnect_elementor_configs', [] );
         $ghl_fields  = self::ghl_contact_fields();
         ?>
-        <p class="description"><?php esc_html_e( 'Enter the Elementor form name and map each field ID to a GHL contact field.', 'good-connect' ); ?></p>
+        <p class="description"><?php esc_html_e( 'Enter the Elementor form name and map each field ID to a contact field.', 'good-connect' ); ?></p>
         <div id="goodconnect-elementor-forms">
             <?php foreach ( $all_configs as $form_name => $config ) :
                 self::render_elementor_form_card( $form_name, $config, $ghl_fields );
@@ -480,7 +480,7 @@ class GoodConnect_Admin {
             </div>
 
             <div class="goodconnect-section">
-                <label class="goodconnect-section-label"><?php esc_html_e( 'GHL Account', 'good-connect' ); ?></label>
+                <label class="goodconnect-section-label"><?php esc_html_e( 'Account', 'good-connect' ); ?></label>
                 <select class="goodconnect-elementor-account">
                     <option value=""><?php esc_html_e( '— Use default account —', 'good-connect' ); ?></option>
                     <?php foreach ( GoodConnect_Settings::get_accounts() as $account ) : ?>
@@ -493,7 +493,7 @@ class GoodConnect_Admin {
 
             <div class="goodconnect-mapper">
                 <div class="goodconnect-mapper-header">
-                    <span><?php esc_html_e( 'GHL Field', 'good-connect' ); ?></span>
+                    <span><?php esc_html_e( 'CRM Field', 'good-connect' ); ?></span>
                     <span><?php esc_html_e( 'Elementor Field ID', 'good-connect' ); ?></span>
                 </div>
                 <?php foreach ( $ghl_fields as $ghl_key => $ghl_label ) : ?>
@@ -509,7 +509,7 @@ class GoodConnect_Admin {
 
             <div class="goodconnect-section goodconnect-elementor-custom-fields-wrap">
                 <label class="goodconnect-section-label"><?php esc_html_e( 'Custom Fields', 'good-connect' ); ?></label>
-                <p class="description"><?php esc_html_e( 'Map GHL custom fields to Elementor field IDs.', 'good-connect' ); ?></p>
+                <p class="description"><?php esc_html_e( 'Map custom fields to Elementor field IDs.', 'good-connect' ); ?></p>
                 <div class="goodconnect-elementor-custom-fields">
                     <?php foreach ( $custom_fields as $row ) : ?>
                         <div class="goodconnect-custom-field-row goodconnect-elementor-custom-field-row">
@@ -525,7 +525,7 @@ class GoodConnect_Admin {
                 </div>
                 <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
                     <button type="button" class="button goodconnect-add-elementor-custom-field">+ <?php esc_html_e( 'Add Custom Field', 'good-connect' ); ?></button>
-                    <button type="button" class="button goodconnect-load-ghl-fields" data-target="elementor"><?php esc_html_e( 'Load from GHL', 'good-connect' ); ?></button>
+                    <button type="button" class="button goodconnect-load-ghl-fields" data-target="elementor"><?php esc_html_e( 'Load Fields', 'good-connect' ); ?></button>
                     <span class="goodconnect-ghl-fields-status" style="font-size:13px;color:#666;"></span>
                 </div>
             </div>
@@ -539,7 +539,7 @@ class GoodConnect_Admin {
 
             <div class="goodconnect-section goodconnect-elementor-opportunity-wrap">
                 <label class="goodconnect-section-label"><?php esc_html_e( 'Opportunity Creation', 'good-connect' ); ?></label>
-                <p class="description"><?php esc_html_e( 'Create a GHL pipeline opportunity when this form is submitted.', 'good-connect' ); ?></p>
+                <p class="description"><?php esc_html_e( 'Create a pipeline opportunity when this form is submitted.', 'good-connect' ); ?></p>
                 <label class="goodconnect-toggle" style="margin-bottom:8px;">
                     <input type="checkbox" class="goodconnect-elementor-opp-enabled" <?php checked( ! empty( $config['opportunity']['enabled'] ) ); ?> />
                     <?php esc_html_e( 'Enable opportunity creation', 'good-connect' ); ?>
@@ -587,16 +587,16 @@ class GoodConnect_Admin {
         $account_id = GoodConnect_Settings::get( 'woo_account_id' );
         ?>
         <div class="goodconnect-card">
-            <h3 class="goodconnect-card-title"><?php esc_html_e( 'Order → GHL Contact', 'good-connect' ); ?></h3>
-            <p class="description"><?php esc_html_e( 'When enabled, a GHL contact will be created or updated every time a new WooCommerce order is placed.', 'good-connect' ); ?></p>
+            <h3 class="goodconnect-card-title"><?php esc_html_e( 'Order → CRM Contact', 'good-connect' ); ?></h3>
+            <p class="description"><?php esc_html_e( 'When enabled, a contact will be created or updated every time a new WooCommerce order is placed.', 'good-connect' ); ?></p>
 
             <label class="goodconnect-toggle">
                 <input type="checkbox" id="gc_woo_enabled" <?php checked( $enabled, '1' ); ?> value="1" />
-                <?php esc_html_e( 'Enable WooCommerce → GHL sync', 'good-connect' ); ?>
+                <?php esc_html_e( 'Enable WooCommerce → CRM sync', 'good-connect' ); ?>
             </label>
 
             <div class="goodconnect-section" style="margin-top:16px;">
-                <label class="goodconnect-section-label"><?php esc_html_e( 'GHL Account', 'good-connect' ); ?></label>
+                <label class="goodconnect-section-label"><?php esc_html_e( 'Account', 'good-connect' ); ?></label>
                 <select id="gc_woo_account_id">
                     <option value=""><?php esc_html_e( '— Use default account —', 'good-connect' ); ?></option>
                     <?php foreach ( GoodConnect_Settings::get_accounts() as $account ) : ?>
@@ -608,13 +608,13 @@ class GoodConnect_Admin {
             </div>
 
             <ul class="goodconnect-field-list">
-                <li><?php esc_html_e( 'Fields sent: firstName, lastName, email, phone, address1, city, state, postalCode, country', 'good-connect' ); ?></li>
+                <li><?php esc_html_e( 'Fields sent: firstName, lastName, email, phone, address1, city, state, postalCode, country, message', 'good-connect' ); ?></li>
                 <li><?php esc_html_e( 'Tag:', 'good-connect' ); ?> <code>woocommerce-customer</code></li>
             </ul>
 
             <div class="goodconnect-section">
                 <label class="goodconnect-section-label"><?php esc_html_e( 'Trigger on Order Status', 'good-connect' ); ?></label>
-                <p class="description"><?php esc_html_e( 'Send to GHL when an order reaches any of these statuses.', 'good-connect' ); ?></p>
+                <p class="description"><?php esc_html_e( 'Send when an order reaches any of these statuses.', 'good-connect' ); ?></p>
                 <?php
                 $trigger_statuses = (array) GoodConnect_Settings::get( 'woo_trigger_statuses' ) ?: [ 'processing' ];
                 $woo_statuses = wc_get_order_statuses();
@@ -632,7 +632,7 @@ class GoodConnect_Admin {
 
             <div class="goodconnect-section">
                 <label class="goodconnect-section-label"><?php esc_html_e( 'Per-Product Tags', 'good-connect' ); ?></label>
-                <p class="description"><?php esc_html_e( 'Add extra GHL tags based on the product purchased. Enter the product ID and comma-separated tags.', 'good-connect' ); ?></p>
+                <p class="description"><?php esc_html_e( 'Add extra tags based on the product purchased. Enter the product ID and comma-separated tags.', 'good-connect' ); ?></p>
                 <?php $product_tags = (array) GoodConnect_Settings::get( 'woo_product_tags' ) ?: []; ?>
                 <div id="gc-woo-product-tags">
                     <?php foreach ( $product_tags as $row ) : ?>
@@ -678,7 +678,7 @@ class GoodConnect_Admin {
 
         $ghl_fields = self::ghl_contact_fields();
         ?>
-        <p class="description"><?php esc_html_e( 'Map Contact Form 7 field names to GHL contact fields. Use the field name set in the CF7 form tag (e.g. your-email).', 'good-connect' ); ?></p>
+        <p class="description"><?php esc_html_e( 'Map Contact Form 7 field names to contact fields. Use the field name set in the CF7 form tag (e.g. your-email).', 'good-connect' ); ?></p>
 
         <?php foreach ( $forms as $form ) :
             $form_id       = $form->ID;
@@ -695,7 +695,7 @@ class GoodConnect_Admin {
             </div>
 
             <div class="goodconnect-section">
-                <label class="goodconnect-section-label"><?php esc_html_e( 'GHL Account', 'good-connect' ); ?></label>
+                <label class="goodconnect-section-label"><?php esc_html_e( 'Account', 'good-connect' ); ?></label>
                 <select class="goodconnect-cf7-account">
                     <option value=""><?php esc_html_e( '— Use default account —', 'good-connect' ); ?></option>
                     <?php foreach ( GoodConnect_Settings::get_accounts() as $account ) : ?>
@@ -708,7 +708,7 @@ class GoodConnect_Admin {
 
             <div class="goodconnect-mapper">
                 <div class="goodconnect-mapper-header">
-                    <span><?php esc_html_e( 'GHL Field', 'good-connect' ); ?></span>
+                    <span><?php esc_html_e( 'CRM Field', 'good-connect' ); ?></span>
                     <span><?php esc_html_e( 'CF7 Field Name', 'good-connect' ); ?></span>
                 </div>
                 <?php foreach ( $ghl_fields as $ghl_key => $ghl_label ) : ?>
@@ -724,7 +724,7 @@ class GoodConnect_Admin {
 
             <div class="goodconnect-section goodconnect-cf7-custom-fields-wrap">
                 <label class="goodconnect-section-label"><?php esc_html_e( 'Custom Fields', 'good-connect' ); ?></label>
-                <p class="description"><?php esc_html_e( 'Map GHL custom fields to CF7 field names.', 'good-connect' ); ?></p>
+                <p class="description"><?php esc_html_e( 'Map custom fields to CF7 field names.', 'good-connect' ); ?></p>
                 <div class="goodconnect-cf7-custom-fields">
                     <?php foreach ( $custom_fields as $row ) : ?>
                         <div class="goodconnect-custom-field-row goodconnect-cf7-custom-field-row">
@@ -740,7 +740,7 @@ class GoodConnect_Admin {
                 </div>
                 <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
                     <button type="button" class="button goodconnect-add-cf7-custom-field">+ <?php esc_html_e( 'Add Custom Field', 'good-connect' ); ?></button>
-                    <button type="button" class="button goodconnect-load-ghl-fields" data-target="cf7"><?php esc_html_e( 'Load from GHL', 'good-connect' ); ?></button>
+                    <button type="button" class="button goodconnect-load-ghl-fields" data-target="cf7"><?php esc_html_e( 'Load Fields', 'good-connect' ); ?></button>
                     <span class="goodconnect-ghl-fields-status" style="font-size:13px;color:#666;"></span>
                 </div>
             </div>
@@ -754,7 +754,7 @@ class GoodConnect_Admin {
 
             <div class="goodconnect-section goodconnect-cf7-opportunity-wrap">
                 <label class="goodconnect-section-label"><?php esc_html_e( 'Opportunity Creation', 'good-connect' ); ?></label>
-                <p class="description"><?php esc_html_e( 'Create a GHL pipeline opportunity when this form is submitted.', 'good-connect' ); ?></p>
+                <p class="description"><?php esc_html_e( 'Create a pipeline opportunity when this form is submitted.', 'good-connect' ); ?></p>
                 <label class="goodconnect-toggle" style="margin-bottom:8px;">
                     <input type="checkbox" class="goodconnect-cf7-opp-enabled" <?php checked( ! empty( $config['opportunity']['enabled'] ) ); ?> />
                     <?php esc_html_e( 'Enable opportunity creation', 'good-connect' ); ?>
@@ -800,11 +800,11 @@ class GoodConnect_Admin {
         $last_run = get_option( GoodConnect_BulkSync::LOG_KEY, [] );
         ?>
         <div class="goodconnect-card">
-            <h3 class="goodconnect-card-title"><?php esc_html_e( 'Bulk Sync WordPress Users → GHL', 'good-connect' ); ?></h3>
-            <p class="description"><?php esc_html_e( 'Sync all WordPress users to GHL as contacts. Runs in batches of 20 via WP-Cron.', 'good-connect' ); ?></p>
+            <h3 class="goodconnect-card-title"><?php esc_html_e( 'Bulk Sync WordPress Users → CRM', 'good-connect' ); ?></h3>
+            <p class="description"><?php esc_html_e( 'Sync all WordPress users as CRM contacts. Runs in batches of 20 via WP-Cron.', 'good-connect' ); ?></p>
 
             <div class="goodconnect-section">
-                <label class="goodconnect-section-label"><?php esc_html_e( 'GHL Account', 'good-connect' ); ?></label>
+                <label class="goodconnect-section-label"><?php esc_html_e( 'Account', 'good-connect' ); ?></label>
                 <select id="gc-bulk-sync-account">
                     <option value=""><?php esc_html_e( '— Use default account —', 'good-connect' ); ?></option>
                     <?php foreach ( GoodConnect_Settings::get_accounts() as $account ) : ?>
@@ -1130,7 +1130,7 @@ class GoodConnect_Admin {
             : GoodConnect_Settings::get_default_account();
 
         if ( ! $account ) {
-            wp_send_json_error( __( 'No GHL account found. Please save your account settings first.', 'good-connect' ) );
+            wp_send_json_error( __( 'No account found. Please save your account settings first.', 'good-connect' ) );
         }
 
         $client = new GoodConnect_GHL_Client( $account );
@@ -1255,6 +1255,7 @@ class GoodConnect_Admin {
             'companyName' => __( 'Company Name', 'good-connect' ),
             'website'     => __( 'Website', 'good-connect' ),
             'source'      => __( 'Source', 'good-connect' ),
+            'message'     => __( 'Message / Notes', 'good-connect' ),
         ];
     }
 }

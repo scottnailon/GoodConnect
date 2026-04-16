@@ -34,7 +34,7 @@ class GoodConnect_Protection_Meta {
         ?>
         <p>
             <label for="gc_required_tags" style="font-weight:600;display:block;margin-bottom:4px;">
-                <?php esc_html_e( 'Required GHL Tags', 'good-connect' ); ?>
+                <?php esc_html_e( 'Required Tags', 'good-connect' ); ?>
             </label>
             <input type="text" id="gc_required_tags" name="gc_required_tags"
                    value="<?php echo esc_attr( $required_tags ); ?>"

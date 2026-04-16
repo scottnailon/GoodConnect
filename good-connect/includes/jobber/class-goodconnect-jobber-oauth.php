@@ -7,14 +7,17 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  * Flow:
  *   1. Admin clicks "Connect to Jobber" on the settings tab.
  *      Browser is sent to Jobber's authorize URL with state = nonce|account_id.
- *   2. Jobber redirects back to wp-admin?page=good-connect&gc_jobber_cb=1&code=...&state=...
+ *   2. Jobber redirects back to wp-admin?page=good-connect&code=...&state=...
  *   3. We exchange code for access+refresh tokens and store them on the account row.
+ *
+ * Note: Jobber strips custom query params from the redirect URI, so callback
+ * detection uses page + code/error presence instead of a marker param.
  */
 class GoodConnect_Jobber_OAuth {
 
     const AUTHORIZE_URL = 'https://api.getjobber.com/api/oauth/authorize';
     const TOKEN_URL     = 'https://api.getjobber.com/api/oauth/token';
-    const SCOPE         = 'read_clients write_clients';
+    const SCOPE         = 'read_clients write_clients read_requests write_requests';
     const STATE_OPTION  = 'goodconnect_jobber_oauth_state';
 
     public static function init() {
@@ -23,7 +26,7 @@ class GoodConnect_Jobber_OAuth {
     }
 
     public static function redirect_uri(): string {
-        return admin_url( 'admin.php?page=good-connect&gc_jobber_cb=1' );
+        return admin_url( 'admin.php?page=good-connect' );
     }
 
     /**
@@ -59,10 +62,17 @@ class GoodConnect_Jobber_OAuth {
     }
 
     /**
-     * Intercept the Jobber OAuth callback when WP admin loads with ?gc_jobber_cb=1.
+     * Intercept the Jobber OAuth callback.
+     *
+     * Jobber strips custom query params from the redirect URI and only appends
+     * code + state. Detect the callback by checking for those params on the
+     * good-connect admin page.
      */
     public static function maybe_handle_callback() {
-        if ( empty( $_GET['gc_jobber_cb'] ) ) return;
+        $page = sanitize_text_field( wp_unslash( $_GET['page'] ?? '' ) );
+        if ( $page !== 'good-connect' || ( empty( $_GET['code'] ) && empty( $_GET['error'] ) ) ) {
+            return;
+        }
         if ( ! current_user_can( 'manage_options' ) ) return;
 
         $state = sanitize_text_field( wp_unslash( $_GET['state'] ?? '' ) );
