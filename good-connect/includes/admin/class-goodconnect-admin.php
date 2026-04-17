@@ -966,6 +966,11 @@ class GoodConnect_Admin {
                     if ( isset( $prior[ $k ] ) ) $account[ $k ] = $prior[ $k ];
                 }
 
+                // Save Jobber Behaviour toggles from the admin checkboxes.
+                foreach ( [ 'jobber_create_request', 'jobber_search_existing', 'jobber_add_property', 'jobber_format_phone_au', 'jobber_track_source_url' ] as $opt ) {
+                    $account[ $opt ] = ! empty( $row[ $opt ] ) ? 1 : 0;
+                }
+
                 // If the admin changed Client ID/Secret, invalidate stored tokens so the next submission surfaces "reconnect".
                 $id_changed     = isset( $prior['jobber_client_id']     ) && $prior['jobber_client_id']     !== $account['jobber_client_id'];
                 $secret_changed = isset( $prior['jobber_client_secret'] ) && $prior['jobber_client_secret'] !== $account['jobber_client_secret'];
