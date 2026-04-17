@@ -220,6 +220,29 @@ class GoodConnect_Admin {
                                     ? esc_html__( 'Reconnect to Jobber', 'good-connect' )
                                     : esc_html__( 'Connect to Jobber', 'good-connect' ); ?>
                             </a>
+                            <fieldset class="gc-jobber-options" style="margin-top:12px;padding:10px;border:1px solid #ddd;border-radius:4px;">
+                                <legend style="font-weight:600;padding:0 6px;"><?php esc_html_e( 'Jobber Behaviour', 'good-connect' ); ?></legend>
+                                <label style="display:block;margin:4px 0;">
+                                    <input type="checkbox" class="gc-account-jobber-opt" data-key="jobber_create_request" <?php checked( ! empty( $account['jobber_create_request'] ) ); ?> />
+                                    <?php esc_html_e( 'Create a Request for each form submission', 'good-connect' ); ?>
+                                </label>
+                                <label style="display:block;margin:4px 0;">
+                                    <input type="checkbox" class="gc-account-jobber-opt" data-key="jobber_search_existing" <?php checked( $account['jobber_search_existing'] ?? true ); ?> />
+                                    <?php esc_html_e( 'Search for existing clients by email before creating', 'good-connect' ); ?>
+                                </label>
+                                <label style="display:block;margin:4px 0;">
+                                    <input type="checkbox" class="gc-account-jobber-opt" data-key="jobber_add_property" <?php checked( $account['jobber_add_property'] ?? true ); ?> />
+                                    <?php esc_html_e( 'Add new property if address differs from existing', 'good-connect' ); ?>
+                                </label>
+                                <label style="display:block;margin:4px 0;">
+                                    <input type="checkbox" class="gc-account-jobber-opt" data-key="jobber_format_phone_au" <?php checked( $account['jobber_format_phone_au'] ?? true ); ?> />
+                                    <?php esc_html_e( 'Format phone numbers as Australian (XXXX XXX XXX)', 'good-connect' ); ?>
+                                </label>
+                                <label style="display:block;margin:4px 0;">
+                                    <input type="checkbox" class="gc-account-jobber-opt" data-key="jobber_track_source_url" <?php checked( $account['jobber_track_source_url'] ?? true ); ?> />
+                                    <?php esc_html_e( 'Include form page URL as lead source', 'good-connect' ); ?>
+                                </label>
+                            </fieldset>
                         </div>
                     </div>
                 <?php endforeach; ?>
