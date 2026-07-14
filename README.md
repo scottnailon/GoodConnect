@@ -6,7 +6,7 @@ GoodConnect bridges your WordPress form plugins to your CRM. Submissions from [G
 
 I built this for myself and figured others might find it useful too. No premium tiers, no yearly fees — just a tool that does what it says. If it's saved you some time or money, the best way to say thanks is to check out my Australian Web Hosting business, [GoodHost](https://goodhost.com.au), or come host a site with me. Or write a blog about us on your website and link back to our domain!
 
-**Need a quality website built?** [Sites By Dsign](https://sitesbydesign.com.au) is my other business that can help you!
+**Need a quality website built?** [Sites By Design](https://sitesbydesign.com.au) is my other business that can help you!
 
 ### → → [Download Wordpress Plugin Here](https://github.com/scottnailon/GoodConnect/releases) ← ←
 
